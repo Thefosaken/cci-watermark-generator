@@ -119,10 +119,12 @@ function drawEventLogo(
   eventLogo: HTMLImageElement,
   payload: WatermarkPayload
 ): void {
-  const rectWidth = 454;
-  const rectHeight = 174;
+  const baseRectWidth = 454;
+  const baseRectHeight = 174;
+  const rectWidth = layout.tileWidth;
+  const rectHeight = layout.tileWidth * (baseRectHeight / baseRectWidth);
   
-  const rectX = layout.tileX + (layout.tileWidth / 2) - (rectWidth / 2);
+  const rectX = layout.tileX;
   const rectY = layout.tileY - rectHeight + 12;
 
   // Draw background rectangle

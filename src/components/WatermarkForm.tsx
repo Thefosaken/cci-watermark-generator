@@ -7,6 +7,11 @@ import { CampusSelector } from './CampusSelector';
 import { renderWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename } from '@/lib/filename';
 
+const PRESET_COLORS = [
+  '#0000FF', '#D32126', '#000000', '#FFFFFF', 
+  '#F5A623', '#7ED321', '#4A90E2', '#9013FE'
+];
+
 interface WatermarkFormProps {
   campuses: Campus[];
   logoUrl: string;
@@ -26,6 +31,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -55,6 +61,17 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   }, [selectedCampus, serviceType]);
 
   const canGenerate = selectedCampus && topic.trim() && logoLoaded;
+
+  // Live preview for background color and scale
+  useEffect(() => {
+    if (serviceType === 'event' && portraitPreview && !isGenerating && canGenerate) {
+      const timer = setTimeout(() => {
+        handleGenerate();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventBgColor, eventLogoScale]);
 
   const handleGenerate = async () => {
     if (!selectedCampus || !topic.trim()) {
@@ -231,19 +248,50 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>
-                  <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px]">
-                    <div className="relative w-6 h-6 rounded-full overflow-hidden border border-[var(--border-strong)] flex-shrink-0">
-                      <input
-                        type="color"
-                        value={eventBgColor}
-                        onChange={(e) => setEventBgColor(e.target.value)}
-                        className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
-                      />
-                    </div>
+                  <div 
+                    className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] cursor-pointer hover:border-[var(--brand-red)] transition-colors"
+                    onClick={() => setShowColorPicker(!showColorPicker)}
+                  >
+                    <div className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner" style={{ backgroundColor: eventBgColor }}></div>
                     <span className="text-[13px] text-[var(--text)] uppercase font-medium">{eventBgColor}</span>
                   </div>
+
+                  {showColorPicker && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)}></div>
+                      <div className="absolute left-0 top-[calc(100%+8px)] z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-[220px] animate-in fade-in zoom-in-95 duration-200">
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                          {PRESET_COLORS.map(c => (
+                            <button
+                              key={c}
+                              onClick={() => { setEventBgColor(c); setShowColorPicker(false); }}
+                              className={`w-full aspect-square rounded-[6px] border ${eventBgColor.toLowerCase() === c.toLowerCase() ? 'border-[var(--brand-red)] ring-2 ring-[var(--brand-red)]/20' : 'border-[var(--border)]'} shadow-inner hover:scale-105 active:scale-95 transition-all`}
+                              style={{ backgroundColor: c }}
+                              title={c}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[12px] text-[var(--text-muted)] font-medium">HEX</span>
+                          <div className="relative flex-1">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text-muted)]">#</span>
+                            <input
+                              type="text"
+                              value={eventBgColor.replace('#', '')}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+                                setEventBgColor(`#${val}`);
+                              }}
+                              className="w-full h-8 pl-5 pr-2 text-[13px] uppercase bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[6px] focus:outline-none focus:border-[var(--brand-red)] transition-colors"
+                              placeholder="0000FF"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-2">

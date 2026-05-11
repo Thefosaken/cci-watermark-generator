@@ -1,0 +1,79 @@
+[
+  {
+    "id": "ibadan",
+    "name": "Ibadan",
+    "cityLabel": "IBADAN",
+    "address": "Celebr8 Centre, Sango-Eleyele Road",
+    "sundayAddress": "Celebr8 Centre, Sango-Eleyele Road",
+    "midweekAddress": "Celebr8 Centre, Sango-Eleyele Road",
+    "country": "Nigeria",
+    "region": "Oyo",
+    "active": true
+  },
+  {
+    "id": "lagos-island",
+    "name": "Lagos Island",
+    "cityLabel": "LAGOS ISLAND",
+    "address": "Queens Park Events Centre, VI",
+    "sundayAddress": "Queens Park Events Centre, VI",
+    "midweekAddress": "Queens Park Events Centre, VI",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "ikeja",
+    "name": "Ikeja",
+    "cityLabel": "IKEJA",
+    "address": "Celebr8 Centre HQ, Vori Close, Acme RD",
+    "sundayAddress": "Celebr8 Centre HQ, Vori Close, Acme RD",
+    "midweekAddress": "Celebr8 Centre HQ, Vori Close, Acme RD",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "utako",
+    "name": "Utako",
+    "cityLabel": "UTAKO",
+    "address": "Celebr8 Centre, Eden Park & Garden",
+    "sundayAddress": "Celebr8 Centre, Eden Park & Garden",
+    "midweekAddress": "Celebr8 Centre, Eden Park & Garden",
+    "country": "Nigeria",
+    "region": "FCT",
+    "active": true
+  },
+  {
+    "id": "port-harcourt",
+    "name": "Port Harcourt",
+    "cityLabel": "PORT HARCOURT",
+    "address": "Rivers State, Nigeria",
+    "sundayAddress": "Rivers State, Nigeria",
+    "midweekAddress": "Rivers State, Nigeria",
+    "country": "Nigeria",
+    "region": "Rivers",
+    "active": true
+  },
+  {
+    "id": "manchester",
+    "name": "Manchester",
+    "cityLabel": "MANCHESTER",
+    "address": "William Hulmes Grammar School",
+    "sundayAddress": "William Hulmes Grammar School",
+    "midweekAddress": "William Hulmes Grammar School",
+    "country": "Uk",
+    "region": "Manchester",
+    "active": true
+  },
+  {
+    "id": "benin",
+    "name": "Benin",
+    "cityLabel": "BENIN",
+    "address": "Vannette's Place Event Centre",
+    "sundayAddress": "Vannette's Place Event Centre",
+    "midweekAddress": "Vannette's Place Event Centre",
+    "country": "Nigeria",
+    "region": "Edo",
+    "active": true
+  }
+]

@@ -262,7 +262,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)}></div>
                       <div className="absolute left-0 top-[calc(100%+8px)] z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-[220px] animate-in fade-in zoom-in-95 duration-200">
-                        <div className="grid grid-cols-4 gap-2 mb-3">
+                        <div className="grid grid-cols-5 gap-2 mb-3">
                           {PRESET_COLORS.map(c => (
                             <button
                               key={c}
@@ -272,6 +272,22 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                               title={c}
                             />
                           ))}
+                          <label className="relative w-full aspect-square rounded-[6px] cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center overflow-hidden border border-[var(--border)] shadow-inner">
+                            <div className="absolute inset-0" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}></div>
+                            <div className="absolute inset-[3px] bg-[var(--surface)] rounded-full flex items-center justify-center shadow-sm">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text)]">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                            </div>
+                            <input 
+                              type="color" 
+                              value={eventBgColor}
+                              onChange={(e) => setEventBgColor(e.target.value)}
+                              className="absolute opacity-0 w-full h-full cursor-pointer"
+                              title="Custom Color"
+                            />
+                          </label>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[12px] text-[var(--text-muted)] font-medium">HEX</span>

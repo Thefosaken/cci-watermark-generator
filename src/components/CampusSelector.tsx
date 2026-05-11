@@ -101,7 +101,26 @@ export function CampusSelector({ campuses, value, serviceType, onChange }: Campu
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-[13px] text-[var(--text-muted)]">No campuses found</div>
+              <div className="p-4 text-center text-[13px] text-[var(--text-muted)]">No campuses found in list</div>
+            )}
+            
+            {search.trim().length > 0 && !filteredCampuses.some(c => c.name.toLowerCase() === search.trim().toLowerCase()) && (
+              <div 
+                className="px-3 py-2.5 cursor-pointer flex flex-col hover:bg-[var(--surface-subtle)] border-l-2 border-[var(--brand-red)] border-t border-t-[var(--border)] bg-[var(--brand-red-soft)]/5"
+                onClick={() => {
+                  onChange({
+                    id: `custom-${Date.now()}`,
+                    name: search.trim(),
+                    cityLabel: search.trim(),
+                    address: '',
+                    active: true
+                  });
+                  setIsOpen(false);
+                }}
+              >
+                <span className="text-[14px] font-medium text-[var(--brand-red)]">Use "{search.trim()}"</span>
+                <span className="text-[12px] text-[var(--text-muted)] mt-0.5">Create custom campus</span>
+              </div>
             )}
           </div>
         </div>

@@ -337,7 +337,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     <input
                       type="range"
                       min="10"
-                      max="200"
+                      max="400"
                       value={eventLogoScale}
                       onChange={(e) => setEventLogoScale(Number(e.target.value))}
                       className="w-full accent-[var(--brand-red)]"

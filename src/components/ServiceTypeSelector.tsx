@@ -19,10 +19,10 @@ export function ServiceTypeSelector({ value, onChange }: ServiceTypeSelectorProp
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-700">Service Type</label>
-      <div className="relative flex bg-[#0A0C10] rounded-[24px] p-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border border-[#1F2128]">
+      <div className="relative flex bg-gray-100 rounded-full p-1.5 shadow-inner border border-gray-200/50">
         {/* Sliding Background Pill */}
         <div 
-          className="absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-12px)/3)] bg-[#1A1D24] rounded-[20px] transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_2px_8px_rgba(0,0,0,0.4)] border border-white/[0.04]"
+          className="absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-12px)/3)] bg-white rounded-full transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-gray-200/50"
           style={{ transform: `translateX(${selectedIndex * 100}%)` }}
         />
         
@@ -36,8 +36,8 @@ export function ServiceTypeSelector({ value, onChange }: ServiceTypeSelectorProp
               onClick={() => onChange(type.value)}
               className={`relative z-10 flex-1 py-3 text-[15px] font-medium transition-all duration-300 outline-none active:scale-[0.97] select-none ${
                 isSelected
-                  ? 'text-[#FF4A4A]'
-                  : 'text-[#8A8F98] hover:text-white'
+                  ? 'text-red-600'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {type.label}

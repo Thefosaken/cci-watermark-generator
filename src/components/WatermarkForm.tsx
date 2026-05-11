@@ -152,7 +152,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       {/* Left Column: Form Controls */}
-      <div className="lg:col-span-5 xl:col-span-4 w-full bg-[var(--surface)] rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] p-5 md:p-6 space-y-6">
+      <div className="lg:col-span-5 xl:col-span-4 w-full bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-5 md:p-6 space-y-6">
         <div>
           <h2 className="text-[16px] font-semibold text-[var(--text)] tracking-tight mb-1">Configuration</h2>
           <p className="text-[13px] text-[var(--text-muted)]">Set up your watermark details below.</p>
@@ -177,7 +177,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="Enter service topic..."
-              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-1 focus:ring-[var(--brand-red)] transition-all outline-none shadow-sm"
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/50 transition-all outline-none"
             />
           </div>
 
@@ -188,7 +188,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Confirm or override address..."
-              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-1 focus:ring-[var(--brand-red)] transition-all outline-none shadow-sm"
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/50 transition-all outline-none"
             />
           </div>
 
@@ -222,7 +222,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
           <button
             onClick={handleGenerate}
             disabled={isGenerating || !canGenerate}
-            className="w-full h-12 bg-[var(--brand-red)] text-white text-[15px] font-semibold rounded-[10px] hover:bg-[var(--brand-red-dark)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2"
+            className="w-full h-12 bg-[var(--brand-red)] text-white text-[15px] font-semibold rounded-[10px] hover:bg-[var(--brand-red-dark)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
             {isGenerating ? (
               <>
@@ -255,7 +255,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               <h3 className="text-[18px] font-semibold text-[var(--text)] tracking-tight">Output Preview</h3>
               <button
                 onClick={() => setShowDownloadMenu(true)}
-                className="h-9 px-4 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-[13px] font-semibold rounded-[8px] hover:bg-[var(--surface-subtle)] active:scale-[0.97] transition-all shadow-sm flex items-center gap-2"
+                className="h-9 px-4 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-[13px] font-semibold rounded-[8px] hover:bg-[var(--surface-subtle)] active:scale-[0.97] transition-all flex items-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -267,7 +267,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col group">
+              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h4 className="text-[14px] font-semibold text-[var(--text)]">Portrait</h4>
@@ -279,7 +279,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                 </div>
               </div>
 
-              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col group">
+              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h4 className="text-[14px] font-semibold text-[var(--text)]">Landscape</h4>

@@ -262,7 +262,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Download All
+                Download
               </button>
             </div>
 
@@ -313,90 +313,90 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     onClick={() => setShowDownloadMenu(false)}
                   />
                   <div 
-                    className="relative w-full max-w-sm bg-[var(--surface)] rounded-[24px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden animate-modal border border-[var(--border-strong)]"
+                    className="relative w-full max-w-[320px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] overflow-hidden animate-modal border border-[var(--border-strong)]"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="px-6 pt-6 pb-2 flex items-center justify-between">
+                    <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[var(--border)]">
                       <div>
-                        <h3 className="text-[18px] font-semibold tracking-tight text-[var(--text)]">Download</h3>
-                        <p className="text-[13px] text-[var(--text-muted)] mt-1">Select your preferred format</p>
+                        <h3 className="text-[14px] font-semibold tracking-tight text-[var(--text)]">Download Export</h3>
+                        <p className="text-[12px] text-[var(--text-muted)] mt-0.5">Select preferred format</p>
                       </div>
                       <button 
                         onClick={() => setShowDownloadMenu(false)}
-                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)] rounded-full transition-colors active:scale-95"
+                        className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95"
                         aria-label="Close"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="18" y1="6" x2="6" y2="18"></line>
                           <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                       </button>
                     </div>
                     
-                    <div className="p-3 space-y-1">
+                    <div className="p-2 space-y-1">
                       <button
                         onClick={() => { handleDownloadPortrait(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--brand-red)] transition-all border border-transparent group-hover:border-[var(--border)]">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect>
                             <line x1="12" y1="18" x2="12.01" y2="18"></line>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[14px] text-[var(--text)]">Portrait Only</div>
-                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Optimized for stories & mobile</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">Portrait Only</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Optimized for stories</div>
                         </div>
                       </button>
                       
                       <button
                         onClick={() => { handleDownloadLandscape(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--brand-red)] transition-all border border-transparent group-hover:border-[var(--border)]">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[14px] text-[var(--text)]">Landscape Only</div>
-                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Standard presentation format</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">Landscape Only</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Standard presentation</div>
                         </div>
                       </button>
 
-                      <div className="h-px bg-[var(--border)] mx-4 my-2"></div>
+                      <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
 
                       <button
                         onClick={() => { handleDownloadBoth(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--text)] transition-all border border-transparent group-hover:border-[var(--border)]">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[14px] text-[var(--text)]">Both Formats</div>
-                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Download 2 separate images</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">Both Formats</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Download separately</div>
                         </div>
                       </button>
 
                       <button
                         onClick={() => { handleAddToZip(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--text)] transition-all border border-transparent group-hover:border-[var(--border)]">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="21 8 21 21 3 21 3 8"></polyline>
                             <rect x="1" y="3" width="22" height="5"></rect>
                             <line x1="10" y1="12" x2="14" y2="12"></line>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[14px] text-[var(--text)]">Archive to ZIP</div>
-                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Compressed folder with both</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">Archive to ZIP</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Compressed folder</div>
                         </div>
                       </button>
                     </div>

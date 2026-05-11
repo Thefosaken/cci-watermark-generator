@@ -8,22 +8,12 @@
   font-display: swap;
 }
 
-@import "tailwindcss";
-
-@font-face {
-  font-family: 'Expose Bold';
-  src: url('/fonts/Expose-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
   :root {
     color-scheme: light;
-    --brand-red: #C5322D;
-    --brand-red-dark: #A92724;
-    --brand-red-soft: rgba(197, 50, 45, 0.12);
+    --brand-red: #d32126;
+    --brand-red-dark: #b81b1f;
+    --brand-red-soft: rgba(211, 33, 38, 0.12);
     --brand-red-bar: rgba(197, 50, 45, 0.50);
     --brand-yellow: #F9F152;
     --brand-white: #FFFFFF;
@@ -38,7 +28,7 @@
     --text-muted: #666B74;
     --text-faint: #8E939E;
     --disabled: #B9BDC6;
-    --focus: #C5322D;
+    --focus: #d32126;
     --shadow: rgba(15, 15, 15, 0.08);
 
     /* Animation Tokens */

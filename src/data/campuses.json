@@ -207,5 +207,16 @@
     "country": "UK",
     "region": "Scotland",
     "active": true
+  },
+  {
+    "id": "dublin",
+    "name": "Dublin",
+    "cityLabel": "DUBLIN",
+    "address": "Cineworld The Parnell Centre",
+    "sundayAddress": "Cineworld The Parnell Centre",
+    "midweekAddress": "Cineworld The Parnell Centre",
+    "country": "Ireland",
+    "region": "Leinster",
+    "active": true
   }
 ]

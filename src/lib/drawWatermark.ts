@@ -29,12 +29,17 @@ export async function renderWatermark(
   eventLogoImage?: HTMLImageElement
 ): Promise<{ canvas: HTMLCanvasElement; url: string }> {
   const layout = LAYOUTS[orientation] as LayoutConfig;
+  const scale = 3; // 3x multiplier for ultra-high export quality
+
   const canvas = document.createElement('canvas');
-  canvas.width = layout.width;
-  canvas.height = layout.height;
+  canvas.width = layout.width * scale;
+  canvas.height = layout.height * scale;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Scale the context so drawing logic remains identical
+  ctx.scale(scale, scale);
+
+  ctx.clearRect(0, 0, layout.width, layout.height);
 
   drawBottomBar(ctx, layout);
   drawCentralTile(ctx, layout, payload.cityLabel, logoImage);

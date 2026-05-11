@@ -192,7 +192,7 @@
     "cityLabel": "COVENTRY",
     "address": "Drapers' Hall, Bayley Lane, CV1 5RN",
     "sundayAddress": "Drapers' Hall, Bayley Lane, CV1 5RN",
-    "midweekAddress": "Drapers' Hall, Bayley Lane, CV1 5RN",
+    "midweekAddress": "Drapers' Hall, Bayley Ln, CV1 5RN",
     "country": "UK",
     "region": "West Midlands",
     "active": true
@@ -203,7 +203,7 @@
     "cityLabel": "GLASGOW",
     "address": "Vue Cinemas, St Enoch",
     "sundayAddress": "Vue Cinemas, St Enoch",
-    "midweekAddress": "Vue Cinemas, St Enoch",
+    "midweekAddress": "The Boardwalk, 105 Brunswick, G1 1TF",
     "country": "UK",
     "region": "Scotland",
     "active": true
@@ -237,6 +237,28 @@
     "address": "Odeon Luxe, Broadway Plaza",
     "sundayAddress": "Odeon Luxe, Broadway Plaza",
     "midweekAddress": "Odeon Luxe, Broadway Plaza",
+    "country": "UK",
+    "region": "West Midlands",
+    "active": true
+  },
+  {
+    "id": "london",
+    "name": "London",
+    "cityLabel": "LONDON",
+    "address": "",
+    "sundayAddress": "",
+    "midweekAddress": "Screen 4, Odeon Cinemas Greenwich",
+    "country": "UK",
+    "region": "London",
+    "active": true
+  },
+  {
+    "id": "birmingham",
+    "name": "Birmingham",
+    "cityLabel": "BIRMINGHAM",
+    "address": "",
+    "sundayAddress": "",
+    "midweekAddress": "Birmingham Broadway Plaza, B168LP",
     "country": "UK",
     "region": "West Midlands",
     "active": true

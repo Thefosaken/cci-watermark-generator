@@ -94,7 +94,7 @@ function drawServiceText(
   topic: string
 ): void {
   const label = SERVICE_LABELS[serviceType];
-  const serviceText = `${label}/${topic}`;
+  const serviceText = serviceType === 'event' ? topic : `${label}/${topic}`;
   
   ctx.fillStyle = DESIGN_TOKENS.colors.textWhite;
   fitTextToWidth(ctx, serviceText, 400, layout.topicFontSize, 8);
@@ -114,10 +114,14 @@ function drawAddressText(ctx: CanvasRenderingContext2D, layout: LayoutConfig, ad
 }
 
 function drawEventLogo(ctx: CanvasRenderingContext2D, layout: LayoutConfig, eventLogo: HTMLImageElement): void {
-  const logoSize = 100;
-  const logoX = layout.width / 2 - logoSize / 2;
-  const logoY = layout.tileY - 130;
-  ctx.drawImage(eventLogo, logoX, logoY, logoSize, logoSize);
+  const destWidth = layout.tileWidth;
+  const aspectRatio = eventLogo.height / eventLogo.width;
+  const destHeight = destWidth * aspectRatio;
+  
+  const logoX = layout.tileX;
+  const logoY = layout.tileY - destHeight;
+  
+  ctx.drawImage(eventLogo, logoX, logoY, destWidth, destHeight);
 }
 
 export async function loadImage(src: string): Promise<HTMLImageElement> {

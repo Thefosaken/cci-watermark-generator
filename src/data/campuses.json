@@ -75,5 +75,137 @@
     "country": "Nigeria",
     "region": "Edo",
     "active": true
+  },
+  {
+    "id": "amsterdam",
+    "name": "Amsterdam",
+    "cityLabel": "AMSTERDAM",
+    "address": "Magnolia Room Hotel Novotel, 1083 AD",
+    "sundayAddress": "Magnolia Room Hotel Novotel, 1083 AD",
+    "midweekAddress": "Magnolia Room Hotel Novotel, 1083 AD",
+    "country": "Netherlands",
+    "region": "North Holland",
+    "active": true
+  },
+  {
+    "id": "bristol",
+    "name": "Bristol",
+    "cityLabel": "BRISTOL",
+    "address": "Orchads School, Filton Road BS7 0XZ",
+    "sundayAddress": "Orchads School, Filton Road BS7 0XZ",
+    "midweekAddress": "Orchads School, Filton Road BS7 0XZ",
+    "country": "UK",
+    "region": "Bristol",
+    "active": true
+  },
+  {
+    "id": "bolton",
+    "name": "Bolton",
+    "cityLabel": "BOLTON",
+    "address": "Bolton St Catherine's Academy, BL2 4HU",
+    "sundayAddress": "Bolton St Catherine's Academy, BL2 4HU",
+    "midweekAddress": "Bolton St Catherine's Academy, BL2 4HU",
+    "country": "UK",
+    "region": "Greater Manchester",
+    "active": true
+  },
+  {
+    "id": "dundee",
+    "name": "Dundee",
+    "cityLabel": "DUNDEE",
+    "address": "Menzieshill Community Hub, DD2 4TQ",
+    "sundayAddress": "Menzieshill Community Hub, DD2 4TQ",
+    "midweekAddress": "Menzieshill Community Hub, DD2 4TQ",
+    "country": "UK",
+    "region": "Scotland",
+    "active": true
+  },
+  {
+    "id": "hull",
+    "name": "Hull",
+    "cityLabel": "HULL",
+    "address": "Eastmount Community Centre, HU8 9NB",
+    "sundayAddress": "Eastmount Community Centre, HU8 9NB",
+    "midweekAddress": "Eastmount Community Centre, HU8 9NB",
+    "country": "UK",
+    "region": "East Yorkshire",
+    "active": true
+  },
+  {
+    "id": "west-london",
+    "name": "West London",
+    "cityLabel": "WEST LONDON",
+    "address": "Vue Cinemas, Westfield, London W12 7GF",
+    "sundayAddress": "Vue Cinemas, Westfield, London W12 7GF",
+    "midweekAddress": "Vue Cinemas, Westfield, London W12 7GF",
+    "country": "UK",
+    "region": "London",
+    "active": true
+  },
+  {
+    "id": "east-london",
+    "name": "East London",
+    "cityLabel": "EAST LONDON",
+    "address": "Coliseum Suite, High Rd, Ilford",
+    "sundayAddress": "Coliseum Suite, High Rd, Ilford",
+    "midweekAddress": "Coliseum Suite, High Rd, Ilford",
+    "country": "UK",
+    "region": "London",
+    "active": true
+  },
+  {
+    "id": "south-east-london",
+    "name": "South East London",
+    "cityLabel": "SOUTH EAST LONDON",
+    "address": "Odeon Greenwich, Bugsby Way",
+    "sundayAddress": "Odeon Greenwich, Bugsby Way",
+    "midweekAddress": "Odeon Greenwich, Bugsby Way",
+    "country": "UK",
+    "region": "London",
+    "active": true
+  },
+  {
+    "id": "leeds",
+    "name": "Leeds",
+    "cityLabel": "LEEDS",
+    "address": "Co-op Academy Brierley, Leeds, LS9 0BA",
+    "sundayAddress": "Co-op Academy Brierley, Leeds, LS9 0BA",
+    "midweekAddress": "Co-op Academy Brierley, Leeds, LS9 0BA",
+    "country": "UK",
+    "region": "West Yorkshire",
+    "active": true
+  },
+  {
+    "id": "newcastle",
+    "name": "Newcastle",
+    "cityLabel": "NEWCASTLE",
+    "address": "Newcastle School for Girls, NE2 3BA",
+    "sundayAddress": "Newcastle School for Girls, NE2 3BA",
+    "midweekAddress": "Newcastle School for Girls, NE2 3BA",
+    "country": "UK",
+    "region": "Tyne and Wear",
+    "active": true
+  },
+  {
+    "id": "coventry",
+    "name": "Coventry",
+    "cityLabel": "COVENTRY",
+    "address": "Drapers' Hall, Bayley Lane, CV1 5RN",
+    "sundayAddress": "Drapers' Hall, Bayley Lane, CV1 5RN",
+    "midweekAddress": "Drapers' Hall, Bayley Lane, CV1 5RN",
+    "country": "UK",
+    "region": "West Midlands",
+    "active": true
+  },
+  {
+    "id": "glasgow",
+    "name": "Glasgow",
+    "cityLabel": "GLASGOW",
+    "address": "Vue Cinemas, St Enoch",
+    "sundayAddress": "Vue Cinemas, St Enoch",
+    "midweekAddress": "Vue Cinemas, St Enoch",
+    "country": "UK",
+    "region": "Scotland",
+    "active": true
   }
 ]

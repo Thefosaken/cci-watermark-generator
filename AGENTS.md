@@ -129,3 +129,45 @@ Edit `src/lib/designTokens.ts` for colors/layouts, `src/lib/drawWatermark.ts` fo
 ## Vercel Deployment
 
 This project auto-deploys to Vercel on git push. Production URL: https://cci-watermark-generator.vercel.app
+
+---
+
+## API Reference
+
+### Types (src/types/watermark.ts)
+
+```typescript
+type ServiceType = 'midweek' | 'sunday' | 'event';
+
+interface Campus {
+  id: string;
+  name: string;
+  cityLabel: string;
+  address: string;
+  sundayAddress?: string;
+  midweekAddress?: string;
+  country?: string;
+  region?: string;
+  active: boolean;
+}
+```
+
+### Design Tokens (src/lib/designTokens.ts)
+
+- Colors: `tileRed`, `barRed`, `textWhite`, `cityYellow`
+- Layouts: portrait (1080×1350), landscape (1620×1080)
+- Service labels: MDWK, Sunday, EVENT
+
+---
+
+## Testing Checklist
+
+When making changes, verify:
+- [ ] Build passes (`npm run build`)
+- [ ] Lint passes (`npm run lint`)
+- [ ] Portrait watermark renders correctly
+- [ ] Landscape watermark renders correctly
+- [ ] Address auto-fills based on service type
+- [ ] Download works (individual + ZIP)
+- [ ] Text fits within allocated space
+- [ ] Logo displays in both orientations

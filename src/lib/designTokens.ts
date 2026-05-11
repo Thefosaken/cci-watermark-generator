@@ -8,7 +8,7 @@ export const DESIGN_TOKENS = {
   typography: {
     primaryFont: 'Lato',
     topicWeight: 900,
-    cityWeight: 800,
+    cityWeight: 700,
   },
 } as const;
 

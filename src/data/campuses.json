@@ -218,5 +218,27 @@
     "country": "Ireland",
     "region": "Leinster",
     "active": true
+  },
+  {
+    "id": "birmingham-west",
+    "name": "Birmingham West",
+    "cityLabel": "BIRMINGHAM WEST",
+    "address": "King Edward VI Five Ways School",
+    "sundayAddress": "King Edward VI Five Ways School",
+    "midweekAddress": "King Edward VI Five Ways School",
+    "country": "UK",
+    "region": "West Midlands",
+    "active": true
+  },
+  {
+    "id": "birmingham-central",
+    "name": "Birmingham Central",
+    "cityLabel": "BIRMINGHAM CENTRAL",
+    "address": "Odeon Luxe, Broadway Plaza",
+    "sundayAddress": "Odeon Luxe, Broadway Plaza",
+    "midweekAddress": "Odeon Luxe, Broadway Plaza",
+    "country": "UK",
+    "region": "West Midlands",
+    "active": true
   }
 ]

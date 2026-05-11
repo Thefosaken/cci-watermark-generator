@@ -19,6 +19,8 @@ export interface WatermarkPayload {
   cityLabel: string;
   address: string;
   eventLogoUrl?: string;
+  eventBgColor?: string;
+  eventLogoScale?: number;
 }
 
 export interface WatermarkRenderResult {

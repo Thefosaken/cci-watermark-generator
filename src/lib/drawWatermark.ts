@@ -42,7 +42,7 @@ export async function renderWatermark(
   drawAddressText(ctx, layout, payload.address);
 
   if (payload.serviceType === 'event' && eventLogoImage) {
-    drawEventLogo(ctx, layout, eventLogoImage);
+    drawEventLogo(ctx, layout, eventLogoImage, payload);
   }
 
   const url = canvas.toDataURL('image/png');
@@ -113,15 +113,50 @@ function drawAddressText(ctx: CanvasRenderingContext2D, layout: LayoutConfig, ad
   ctx.fillText(address, layout.tileX + layout.tileWidth + layout.rightPadding, textY);
 }
 
-function drawEventLogo(ctx: CanvasRenderingContext2D, layout: LayoutConfig, eventLogo: HTMLImageElement): void {
-  const destWidth = layout.tileWidth;
-  const aspectRatio = eventLogo.height / eventLogo.width;
-  const destHeight = destWidth * aspectRatio;
+function drawEventLogo(
+  ctx: CanvasRenderingContext2D,
+  layout: LayoutConfig,
+  eventLogo: HTMLImageElement,
+  payload: WatermarkPayload
+): void {
+  const rectWidth = 454;
+  const rectHeight = 174;
   
-  const logoX = layout.tileX;
-  const logoY = layout.tileY - destHeight;
+  const rectX = layout.tileX + (layout.tileWidth / 2) - (rectWidth / 2);
+  const rectY = layout.tileY - rectHeight + 12;
+
+  // Draw background rectangle
+  if (payload.eventBgColor) {
+    ctx.fillStyle = payload.eventBgColor;
+    ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+  }
+
+  // Draw scaled logo inside
+  const scale = (payload.eventLogoScale || 100) / 100;
   
-  ctx.drawImage(eventLogo, logoX, logoY, destWidth, destHeight);
+  const padding = 20;
+  const maxLogoWidth = rectWidth - padding * 2;
+  const maxLogoHeight = rectHeight - padding * 2;
+  
+  const imgAspect = eventLogo.width / eventLogo.height;
+  const boxAspect = maxLogoWidth / maxLogoHeight;
+  
+  let baseWidth, baseHeight;
+  if (imgAspect > boxAspect) {
+    baseWidth = maxLogoWidth;
+    baseHeight = maxLogoWidth / imgAspect;
+  } else {
+    baseHeight = maxLogoHeight;
+    baseWidth = maxLogoHeight * imgAspect;
+  }
+  
+  const finalWidth = baseWidth * scale;
+  const finalHeight = baseHeight * scale;
+  
+  const logoX = rectX + (rectWidth / 2) - (finalWidth / 2);
+  const logoY = rectY + (rectHeight / 2) - (finalHeight / 2);
+  
+  ctx.drawImage(eventLogo, logoX, logoY, finalWidth, finalHeight);
 }
 
 export async function loadImage(src: string): Promise<HTMLImageElement> {

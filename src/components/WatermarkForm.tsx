@@ -18,6 +18,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [topic, setTopic] = useState('');
   const [address, setAddress] = useState('');
   const [eventLogo, setEventLogo] = useState<string | null>(null);
+  const [eventBgColor, setEventBgColor] = useState('#0000ff');
+  const [eventLogoScale, setEventLogoScale] = useState(100);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
   const [landscapePreview, setLandscapePreview] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -75,6 +77,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         cityLabel: selectedCampus.cityLabel,
         address: address.trim(),
         eventLogoUrl: eventLogo || undefined,
+        eventBgColor,
+        eventLogoScale,
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -193,22 +197,59 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
           </div>
 
           {serviceType === 'event' && (
-            <div className="space-y-2">
-              <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo (Optional)</label>
-              <div className="relative group cursor-pointer border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors p-4 flex flex-col items-center justify-center bg-[var(--surface-subtle)] hover:bg-[var(--surface)]">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleEventLogoUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--brand-red)] transition-colors mb-2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <span className="text-[13px] font-medium text-[var(--text)]">Click or drag to upload</span>
-                <span className="text-[12px] text-[var(--text-faint)] mt-1">PNG or SVG</span>
+            <div className="space-y-5 border-t border-[var(--border)] pt-5 mt-5">
+              <div className="space-y-2">
+                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo</label>
+                <div className="relative group cursor-pointer border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors p-4 flex flex-col items-center justify-center bg-[var(--surface-subtle)] hover:bg-[var(--surface)]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEventLogoUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--brand-red)] transition-colors mb-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span className="text-[13px] font-medium text-[var(--text)]">Click or drag to upload</span>
+                  <span className="text-[12px] text-[var(--text-faint)] mt-1">PNG or SVG</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>
+                  <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px]">
+                    <div className="relative w-6 h-6 rounded-full overflow-hidden border border-[var(--border-strong)] flex-shrink-0">
+                      <input
+                        type="color"
+                        value={eventBgColor}
+                        onChange={(e) => setEventBgColor(e.target.value)}
+                        className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
+                      />
+                    </div>
+                    <span className="text-[13px] text-[var(--text)] uppercase font-medium">{eventBgColor}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between h-[18px]">
+                    <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Scale</label>
+                    <span className="text-[12px] text-[var(--text-muted)] font-medium">{eventLogoScale}%</span>
+                  </div>
+                  <div className="flex items-center h-11">
+                    <input
+                      type="range"
+                      min="10"
+                      max="200"
+                      value={eventLogoScale}
+                      onChange={(e) => setEventLogoScale(Number(e.target.value))}
+                      className="w-full accent-[var(--brand-red)]"
+                      disabled={!eventLogo}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}

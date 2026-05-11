@@ -71,7 +71,7 @@ function drawCentralTile(
   const tileCenterX = layout.tileX + layout.tileWidth / 2;
   const tileCenterY = layout.tileY + layout.tileVisibleHeight / 2;
 
-  ctx.font = `900 ${layout.cityFontSize}px Lato, sans-serif`;
+  ctx.font = `${DESIGN_TOKENS.typography.cityWeight} ${layout.cityFontSize}px Lato, sans-serif`;
   const cityText = cityLabel.toUpperCase();
   const cityMetrics = ctx.measureText(cityText);
   const cityTextHeight = layout.cityFontSize;

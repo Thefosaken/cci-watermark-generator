@@ -210,7 +210,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Confirm or override address..."
+              placeholder="Input venue address..."
               className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/20 transition-all outline-none"
             />
           </div>

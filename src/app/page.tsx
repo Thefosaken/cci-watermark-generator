@@ -23,7 +23,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1 w-full max-w-[1440px] mx-auto p-4 sm:p-6 md:p-8">
-        <WatermarkForm campuses={campuses} logoUrl="/cci-logo-2.svg" />
+        <WatermarkForm campuses={campuses} logoUrl="/cci-logo.svg" />
       </main>
     </div>
   );

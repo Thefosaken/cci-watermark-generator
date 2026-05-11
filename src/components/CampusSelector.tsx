@@ -49,7 +49,7 @@ export function CampusSelector({ campuses, value, serviceType, onChange }: Campu
       <div 
         className={`w-full min-h-[44px] flex items-center justify-between px-3 bg-[var(--surface)] border ${
           isOpen 
-            ? 'border-[var(--brand-red)] ring-[3px] ring-[var(--brand-red)]/50' 
+            ? 'border-[var(--brand-red)] ring-[3px] ring-[var(--brand-red)]/20' 
             : 'border-[var(--border)] hover:border-[var(--border-strong)]'
         } rounded-[8px] text-[15px] cursor-pointer transition-all`}
         onClick={() => {
@@ -77,7 +77,7 @@ export function CampusSelector({ campuses, value, serviceType, onChange }: Campu
               placeholder="Search campuses..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[var(--surface-subtle)] border border-transparent rounded-[6px] px-3 py-2 text-[14px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/50 transition-all"
+              className="w-full bg-[var(--surface-subtle)] border border-transparent rounded-[6px] px-3 py-2 text-[14px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/20 transition-all"
               onClick={(e) => e.stopPropagation()}
             />
           </div>

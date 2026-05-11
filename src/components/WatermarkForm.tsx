@@ -154,8 +154,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       {/* Left Column: Form Controls */}
       <div className="lg:col-span-5 xl:col-span-4 w-full bg-[var(--surface)] rounded-[16px] border border-[var(--border)] p-5 md:p-6 space-y-6">
         <div>
-          <h2 className="text-[16px] font-semibold text-[var(--text)] tracking-tight mb-1">Configuration</h2>
-          <p className="text-[13px] text-[var(--text-muted)]">Set up your watermark details below.</p>
+          <h2 className="text-[16px] font-semibold text-[var(--text)] tracking-tight mb-1">Generate Watermarks</h2>
+          <p className="text-[13px] text-[var(--text-muted)]">Fill in watermark details below</p>
         </div>
 
         <div className="h-px w-full bg-[var(--border)]" />
@@ -177,7 +177,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="Enter service topic..."
-              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/50 transition-all outline-none"
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/20 transition-all outline-none"
             />
           </div>
 
@@ -188,7 +188,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Confirm or override address..."
-              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/50 transition-all outline-none"
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-[3px] focus:ring-[var(--brand-red)]/20 transition-all outline-none"
             />
           </div>
 

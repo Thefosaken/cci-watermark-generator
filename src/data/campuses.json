@@ -44,12 +44,12 @@
     "active": true
   },
   {
-    "id": "port-harcourt",
-    "name": "Port Harcourt",
-    "cityLabel": "PORT HARCOURT",
-    "address": "Rivers State, Nigeria",
-    "sundayAddress": "Rivers State, Nigeria",
-    "midweekAddress": "Rivers State, Nigeria",
+    "id": "olu-obasanjo",
+    "name": "Olu Obasanjo",
+    "cityLabel": "OLU OBASANJO",
+    "address": "Celebr8 Centre, Olu Obasanjo",
+    "sundayAddress": "Celebr8 Centre, Olu Obasanjo",
+    "midweekAddress": "Celebr8 Centre, Olu Obasanjo",
     "country": "Nigeria",
     "region": "Rivers",
     "active": true

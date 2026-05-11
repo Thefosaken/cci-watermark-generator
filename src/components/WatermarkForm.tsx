@@ -200,20 +200,33 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
             <div className="space-y-5 border-t border-[var(--border)] pt-5 mt-5">
               <div className="space-y-2">
                 <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo</label>
-                <div className="relative group cursor-pointer border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors p-4 flex flex-col items-center justify-center bg-[var(--surface-subtle)] hover:bg-[var(--surface)]">
+                <div className={`relative group cursor-pointer border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors flex flex-col items-center justify-center bg-[var(--surface-subtle)] hover:bg-[var(--surface)] overflow-hidden ${eventLogo ? 'h-[140px] p-2' : 'p-4 min-h-[120px]'}`}>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleEventLogoUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    title={eventLogo ? "Change event logo" : "Upload event logo"}
                   />
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--brand-red)] transition-colors mb-2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  <span className="text-[13px] font-medium text-[var(--text)]">Click or drag to upload</span>
-                  <span className="text-[12px] text-[var(--text-faint)] mt-1">PNG or SVG</span>
+                  {eventLogo ? (
+                    <div className="relative w-full h-full rounded-[8px] overflow-hidden bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                      <div className="absolute inset-0 transition-colors" style={{ backgroundColor: eventBgColor }}></div>
+                      <img src={eventLogo} alt="Event logo" className="relative z-0 w-full h-full object-contain p-2" style={{ transform: `scale(${eventLogoScale / 100})` }} />
+                      <div className="absolute inset-0 z-10 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-white text-[13px] font-medium">Click to change</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--brand-red)] transition-colors mb-2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                      <span className="text-[13px] font-medium text-[var(--text)]">Click or drag to upload</span>
+                      <span className="text-[12px] text-[var(--text-faint)] mt-1">PNG or SVG</span>
+                    </>
+                  )}
                 </div>
               </div>
 

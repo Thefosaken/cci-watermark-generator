@@ -8,121 +8,95 @@
   font-display: swap;
 }
 
-:root {
-  --color-primary: #d71921;
-  --color-primary-dark: #b8141b;
-  --color-background: #fafafa;
-  --color-surface: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #6b7280;
-  --color-border: #e5e7eb;
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Expose Bold';
+  src: url('/fonts/Expose-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --brand-red: #C5322D;
+    --brand-red-dark: #A92724;
+    --brand-red-soft: rgba(197, 50, 45, 0.12);
+    --brand-red-bar: rgba(197, 50, 45, 0.50);
+    --brand-yellow: #F9F152;
+    --brand-white: #FFFFFF;
+
+    --bg: #F7F7F8;
+    --surface: #FFFFFF;
+    --surface-subtle: #F2F2F3;
+    --surface-raised: #FFFFFF;
+    --border: #E3E4E8;
+    --border-strong: #C9CBD1;
+    --text: #171717;
+    --text-muted: #666B74;
+    --text-faint: #8E939E;
+    --disabled: #B9BDC6;
+    --focus: #C5322D;
+    --shadow: rgba(15, 15, 15, 0.08);
+
+    /* Animation Tokens */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #08090A;
+    --surface: #101114;
+    --surface-subtle: #16171B;
+    --surface-raised: #1B1C21;
+    --border: #2A2C33;
+    --border-strong: #3A3D46;
+    --text: #F4F5F8;
+    --text-muted: #A2A6B0;
+    --text-faint: #707581;
+    --disabled: #555B66;
+    --focus: #F2645D;
+    --shadow: rgba(0, 0, 0, 0.36);
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--color-background);
-  color: var(--color-text);
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  /* Focus states */
+  *:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 }
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s var(--ease-out-expo) forwards;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.3s var(--ease-spring) forwards;
-}
-
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--border-strong);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: var(--text-faint);
 }
 
-/* Focus states */
-*:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Button hover effects */
-button {
-  transition: all var(--duration-fast) var(--ease-out-expo);
-}
-
-button:hover {
-  transform: translateY(-1px);
-}
-
-button:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Input focus effects */
-input:focus, select:focus {
-  transition: all var(--duration-fast) var(--ease-out-expo);
-}
-
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

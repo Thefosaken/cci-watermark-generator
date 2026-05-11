@@ -150,91 +150,149 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <ServiceTypeSelector value={serviceType} onChange={setServiceType} />
-      
-      <CampusSelector
-        campuses={campuses}
-        value={selectedCampus}
-        serviceType={serviceType}
-        onChange={setSelectedCampus}
-      />
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Topic/Theme</label>
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Enter service topic..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Address</label>
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="Venue address..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-        />
-      </div>
-
-      {serviceType === 'event' && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Event Logo (optional)</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleEventLogoUpload}
-            className="w-full p-3 border border-gray-300 rounded-lg"
-          />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      {/* Left Column: Form Controls */}
+      <div className="lg:col-span-5 xl:col-span-4 w-full bg-[var(--surface)] rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] p-5 md:p-6 space-y-6">
+        <div>
+          <h2 className="text-[16px] font-semibold text-[var(--text)] tracking-tight mb-1">Configuration</h2>
+          <p className="text-[13px] text-[var(--text-muted)]">Set up your watermark details below.</p>
         </div>
-      )}
 
-      {error && (
-        <div className="p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>
-      )}
+        <div className="h-px w-full bg-[var(--border)]" />
 
-      <button
-        onClick={handleGenerate}
-        disabled={isGenerating || !canGenerate}
-        className="w-full py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isGenerating ? 'Generating...' : 'Generate Preview'}
-      </button>
-
-      {portraitPreview && landscapePreview && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Preview</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Portrait</p>
-              <img
-                src={portraitPreview}
-                alt="Portrait preview"
-                className="w-full rounded-lg border"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Landscape</p>
-              <img
-                src={landscapePreview}
-                alt="Landscape preview"
-                className="w-full rounded-lg border"
-              />
-            </div>
-          </div>
+        <div className="space-y-5">
+          <ServiceTypeSelector value={serviceType} onChange={setServiceType} />
           
-            <button
-              onClick={() => setShowDownloadMenu(true)}
-              className="w-full py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 shadow-sm active:scale-[0.98] transition-all"
-            >
-              Download Options
-            </button>
-            
+          <CampusSelector
+            campuses={campuses}
+            value={selectedCampus}
+            serviceType={serviceType}
+            onChange={setSelectedCampus}
+          />
+
+          <div className="space-y-2">
+            <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Topic / Theme</label>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Enter service topic..."
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-1 focus:ring-[var(--brand-red)] transition-all outline-none shadow-sm"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Venue Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Confirm or override address..."
+              className="w-full h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] text-[15px] text-[var(--text)] placeholder:text-[var(--text-faint)] focus:border-[var(--brand-red)] focus:ring-1 focus:ring-[var(--brand-red)] transition-all outline-none shadow-sm"
+            />
+          </div>
+
+          {serviceType === 'event' && (
+            <div className="space-y-2">
+              <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo (Optional)</label>
+              <div className="relative group cursor-pointer border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors p-4 flex flex-col items-center justify-center bg-[var(--surface-subtle)] hover:bg-[var(--surface)]">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEventLogoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--brand-red)] transition-colors mb-2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span className="text-[13px] font-medium text-[var(--text)]">Click or drag to upload</span>
+                <span className="text-[12px] text-[var(--text-faint)] mt-1">PNG or SVG</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div className="p-3 bg-[var(--danger-soft)] text-[var(--danger)] text-[13px] font-medium rounded-lg border border-[var(--danger)]/20">{error}</div>
+        )}
+
+        <div className="pt-2">
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || !canGenerate}
+            className="w-full h-12 bg-[var(--brand-red)] text-white text-[15px] font-semibold rounded-[10px] hover:bg-[var(--brand-red-dark)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+              </>
+            ) : 'Generate Preview'}
+          </button>
+        </div>
+      </div>
+
+      {/* Right Column: Preview Area */}
+      <div className="lg:col-span-7 xl:col-span-8 w-full">
+        {(!portraitPreview || !landscapePreview) ? (
+          <div className="w-full h-[300px] lg:h-full min-h-[400px] border border-dashed border-[var(--border-strong)] rounded-[16px] flex flex-col items-center justify-center text-[var(--text-faint)] bg-[var(--surface-subtle)]/50 transition-all">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 opacity-50">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <p className="text-[14px] font-medium text-[var(--text-muted)]">No preview generated yet</p>
+            <p className="text-[13px] mt-1 text-[var(--text-faint)]">Fill out the configuration to view output.</p>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[18px] font-semibold text-[var(--text)] tracking-tight">Output Preview</h3>
+              <button
+                onClick={() => setShowDownloadMenu(true)}
+                className="h-9 px-4 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-[13px] font-semibold rounded-[8px] hover:bg-[var(--surface-subtle)] active:scale-[0.97] transition-all shadow-sm flex items-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download All
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col group">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-[var(--text)]">Portrait</h4>
+                    <p className="text-[12px] text-[var(--text-muted)]">1080 × 1350 • 4:5</p>
+                  </div>
+                </div>
+                <div className="relative w-full aspect-[4/5] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                  <img src={portraitPreview} alt="Portrait preview" className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col group">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-[var(--text)]">Landscape</h4>
+                    <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • 16:9</p>
+                  </div>
+                </div>
+                <div className="relative w-full aspect-video rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                  <img src={landscapePreview} alt="Landscape preview" className="w-full h-full object-contain" />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal */}
             {showDownloadMenu && (
               <>
                 <style>{`
@@ -255,17 +313,17 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     onClick={() => setShowDownloadMenu(false)}
                   />
                   <div 
-                    className="relative w-full max-w-sm bg-white rounded-[24px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden animate-modal border border-gray-100"
+                    className="relative w-full max-w-sm bg-[var(--surface)] rounded-[24px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden animate-modal border border-[var(--border-strong)]"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="px-6 pt-6 pb-2 flex items-center justify-between">
                       <div>
-                        <h3 className="text-xl font-semibold tracking-tight text-gray-900">Download</h3>
-                        <p className="text-sm text-gray-500 mt-1">Select your preferred format</p>
+                        <h3 className="text-[18px] font-semibold tracking-tight text-[var(--text)]">Download</h3>
+                        <p className="text-[13px] text-[var(--text-muted)] mt-1">Select your preferred format</p>
                       </div>
                       <button 
                         onClick={() => setShowDownloadMenu(false)}
-                        className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)] rounded-full transition-colors active:scale-95"
                         aria-label="Close"
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -278,67 +336,67 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     <div className="p-3 space-y-1">
                       <button
                         onClick={() => { handleDownloadPortrait(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center group-hover:bg-white group-hover:shadow-sm group-hover:text-red-600 transition-all border border-transparent group-hover:border-gray-200">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--brand-red)] transition-all border border-transparent group-hover:border-[var(--border)]">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect>
                             <line x1="12" y1="18" x2="12.01" y2="18"></line>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">Portrait Only</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Optimized for stories & mobile</div>
+                          <div className="font-medium text-[14px] text-[var(--text)]">Portrait Only</div>
+                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Optimized for stories & mobile</div>
                         </div>
                       </button>
                       
                       <button
                         onClick={() => { handleDownloadLandscape(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center group-hover:bg-white group-hover:shadow-sm group-hover:text-red-600 transition-all border border-transparent group-hover:border-gray-200">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--brand-red)] transition-all border border-transparent group-hover:border-[var(--border)]">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">Landscape Only</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Standard presentation format</div>
+                          <div className="font-medium text-[14px] text-[var(--text)]">Landscape Only</div>
+                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Standard presentation format</div>
                         </div>
                       </button>
 
-                      <div className="h-px bg-gray-100 mx-4 my-2"></div>
+                      <div className="h-px bg-[var(--border)] mx-4 my-2"></div>
 
                       <button
                         onClick={() => { handleDownloadBoth(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center group-hover:bg-white group-hover:shadow-sm group-hover:text-gray-900 transition-all border border-transparent group-hover:border-gray-200">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--text)] transition-all border border-transparent group-hover:border-[var(--border)]">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">Both Formats</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Download 2 separate images</div>
+                          <div className="font-medium text-[14px] text-[var(--text)]">Both Formats</div>
+                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Download 2 separate images</div>
                         </div>
                       </button>
 
                       <button
                         onClick={() => { handleAddToZip(); setShowDownloadMenu(false); }}
-                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all group text-left"
+                        className="w-full flex items-center gap-4 p-3 rounded-[16px] hover:bg-[var(--surface-subtle)] active:bg-[var(--border)] active:scale-[0.98] transition-all group text-left"
                       >
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center group-hover:bg-white group-hover:shadow-sm group-hover:text-gray-900 transition-all border border-transparent group-hover:border-gray-200">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex-shrink-0 w-11 h-11 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full flex items-center justify-center group-hover:bg-[var(--surface)] group-hover:shadow-sm group-hover:text-[var(--text)] transition-all border border-transparent group-hover:border-[var(--border)]">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="21 8 21 21 3 21 3 8"></polyline>
                             <rect x="1" y="3" width="22" height="5"></rect>
                             <line x1="10" y1="12" x2="14" y2="12"></line>
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">Archive to ZIP</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Compressed folder with both</div>
+                          <div className="font-medium text-[14px] text-[var(--text)]">Archive to ZIP</div>
+                          <div className="text-[12px] text-[var(--text-muted)] mt-0.5">Compressed folder with both</div>
                         </div>
                       </button>
                     </div>
@@ -346,8 +404,9 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                 </div>
               </>
             )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

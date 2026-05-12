@@ -28,6 +28,10 @@ export async function renderWatermark(
   logoImage: HTMLImageElement,
   eventLogoImage?: HTMLImageElement
 ): Promise<{ canvas: HTMLCanvasElement; url: string }> {
+  if (typeof document !== 'undefined' && document.fonts) {
+    await document.fonts.ready;
+  }
+
   const layout = LAYOUTS[orientation] as LayoutConfig;
   const scale = 3; // 3x multiplier for ultra-high export quality
 

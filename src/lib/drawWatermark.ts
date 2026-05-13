@@ -59,7 +59,12 @@ export async function renderWatermark(
 }
 
 function drawBottomBar(ctx: CanvasRenderingContext2D, layout: LayoutConfig): void {
-  ctx.fillStyle = DESIGN_TOKENS.colors.barRed;
+  // Background strip - black at 50% opacity
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(0, layout.barY, layout.width, layout.barHeight);
+  
+  // Foreground strip - red at 50% opacity
+  ctx.fillStyle = 'rgba(197, 50, 45, 0.5)';
   ctx.fillRect(0, layout.barY, layout.width, layout.barHeight);
 }
 

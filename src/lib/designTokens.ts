@@ -1,7 +1,7 @@
 export const DESIGN_TOKENS = {
   colors: {
     tileRed: '#d71921',
-    barRed: 'rgba(118, 11, 14, 0.75)',
+    barRed: 'rgba(131, 33, 30, 0.75)',
     textWhite: '#ffffff',
     cityYellow: '#f9f152',
   },

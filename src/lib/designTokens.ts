@@ -59,25 +59,29 @@ export const DOCUMENTARY_LAYOUTS = {
     badgeHeight: 75,
     badgePaddingLeft: 40,
     badgeFontSize: 20,
-    // Logo: centered, near bottom
-    logoWidth: 182,
-    logoHeight: 182,
-    logoX: (1080 - 182) / 2,
-    logoY: 1125,
+    // Red tile box: centred, near bottom
+    tileSize: 209,
+    tileX: (1080 - 209) / 2,
+    tileY: 1141,
+    // Logo inside tile
+    logoWidth: 142,
+    logoHeight: 69,
   },
   landscape: {
     width: 1920,
     height: 1080,
-    // Badge: right-anchored grey pill, vertically centered
+    // Badge: right-anchored grey pill, vertically centred
     badgeY: 460,
     badgeHeight: 70,
     badgePaddingLeft: 40,
     badgeFontSize: 20,
-    // Logo: centered, near bottom
-    logoWidth: 182,
-    logoHeight: 182,
-    logoX: (1920 - 182) / 2,
-    logoY: 845,
+    // Red tile box: centred, near bottom
+    tileSize: 209,
+    tileX: (1920 - 209) / 2,
+    tileY: 871,
+    // Logo inside tile
+    logoWidth: 142,
+    logoHeight: 69,
   },
 } as const;
 

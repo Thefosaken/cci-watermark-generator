@@ -199,10 +199,11 @@ interface DocumentaryLayoutConfig {
   badgeHeight: number;
   badgePaddingLeft: number;
   badgeFontSize: number;
+  tileSize: number;
+  tileX: number;
+  tileY: number;
   logoWidth: number;
   logoHeight: number;
-  logoX: number;
-  logoY: number;
 }
 
 export async function renderDocumentaryWatermark(
@@ -248,9 +249,15 @@ export async function renderDocumentaryWatermark(
   const textY = layout.badgeY + layout.badgeHeight / 2 + layout.badgeFontSize * 0.35;
   ctx.fillText(badgeText, textX, textY);
 
-  // ── CCI Logo ───────────────────────────────────────────────────────────────
+  // ── Red Tile Box ───────────────────────────────────────────────────────────
+  ctx.fillStyle = DESIGN_TOKENS.colors.tileRed;
+  ctx.fillRect(layout.tileX, layout.tileY, layout.tileSize, layout.tileSize);
+
+  // ── CCI Logo (centred inside the red tile) ─────────────────────────────────
   if (logoImage) {
-    ctx.drawImage(logoImage, layout.logoX, layout.logoY, layout.logoWidth, layout.logoHeight);
+    const logoX = layout.tileX + (layout.tileSize - layout.logoWidth) / 2;
+    const logoY = layout.tileY + (layout.tileSize - layout.logoHeight) / 2;
+    ctx.drawImage(logoImage, logoX, logoY, layout.logoWidth, layout.logoHeight);
   }
 
   const url = canvas.toDataURL('image/png');

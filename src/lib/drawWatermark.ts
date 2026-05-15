@@ -33,7 +33,7 @@ export async function renderWatermark(
   }
 
   const layout = LAYOUTS[orientation] as LayoutConfig;
-  const scale = 3; // 3x multiplier for ultra-high export quality
+  const scale = 4; // 4x multiplier for ultra-high export quality
 
   const canvas = document.createElement('canvas');
   canvas.width = layout.width * scale;
@@ -217,7 +217,7 @@ export async function renderDocumentaryWatermark(
   }
 
   const layout = DOCUMENTARY_LAYOUTS[orientation] as DocumentaryLayoutConfig;
-  const scale = 3;
+  const scale = 4;
 
   const canvas = document.createElement('canvas');
   canvas.width = layout.width * scale;

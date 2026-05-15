@@ -27,7 +27,7 @@ export const LAYOUTS = {
     leftPadding: 55,
     rightPadding: 55,
     logoToCityGap: 6,
-    topicFontSize: 18.8,
+    topicFontSize: 19.3,
     cityFontSize: 15.17,
   },
   landscape: {
@@ -44,7 +44,7 @@ export const LAYOUTS = {
     leftPadding: 55,
     rightPadding: 55,
     logoToCityGap: 6,
-    topicFontSize: 18.8,
+    topicFontSize: 19.3,
     cityFontSize: 15.17,
   },
 } as const;

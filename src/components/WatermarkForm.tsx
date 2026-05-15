@@ -34,6 +34,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0, campusName: '' });
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -161,6 +163,88 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     zip.file(landscapeName, landscapeBlob);
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, `CCI_${selectedCampus.name.replace(/\s/g, '')}_${serviceType}_${topic.replace(/\s/g, '-')}.zip`);
+  };
+
+  const handleDownloadAllCampuses = async () => {
+    if (!topic.trim()) {
+      setError('Please enter a topic before downloading all campuses');
+      return;
+    }
+
+    const activeCampuses = campuses.filter((campus) => {
+      let addr = campus.address;
+      if (serviceType === 'midweek' && campus.midweekAddress) {
+        addr = campus.midweekAddress;
+      } else if (serviceType === 'sunday' && campus.sundayAddress) {
+        addr = campus.sundayAddress;
+      }
+      return campus.active && addr.trim();
+    });
+
+    if (activeCampuses.length === 0) {
+      setError('No campuses with valid addresses found');
+      return;
+    }
+
+    setError(null);
+    setIsGeneratingAll(true);
+    setProgress({ current: 0, total: activeCampuses.length, campusName: '' });
+
+    try {
+      if (!logoRef.current) {
+        throw new Error('Logo not loaded');
+      }
+
+      const { saveAs } = await import('file-saver');
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      for (let i = 0; i < activeCampuses.length; i++) {
+        const campus = activeCampuses[i];
+        setProgress({ current: i + 1, total: activeCampuses.length, campusName: campus.name });
+
+        let addr = campus.address;
+        if (serviceType === 'midweek' && campus.midweekAddress) {
+          addr = campus.midweekAddress;
+        } else if (serviceType === 'sunday' && campus.sundayAddress) {
+          addr = campus.sundayAddress;
+        }
+
+        const payload: WatermarkPayload = {
+          serviceType,
+          topic: topic.trim(),
+          campusName: campus.name,
+          cityLabel: campus.cityLabel,
+          address: addr.trim(),
+          eventLogoUrl: eventLogo || undefined,
+          eventBgColor,
+          eventLogoScale,
+        };
+
+        const [portrait, landscape] = await Promise.all([
+          renderWatermark(payload, 'portrait', logoRef.current, undefined),
+          renderWatermark(payload, 'landscape', logoRef.current, undefined),
+        ]);
+
+        const portraitBlob = await fetch(portrait.url).then((r) => r.blob());
+        const landscapeBlob = await fetch(landscape.url).then((r) => r.blob());
+
+        const folder = zip.folder(campus.name);
+        folder?.file(`${campus.name}-PORTRAIT.png`, portraitBlob);
+        folder?.file(`${campus.name}-LANDSCAPE.png`, landscapeBlob);
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const date = new Date().toISOString().split('T')[0];
+      const topicSlug = topic.trim().replace(/\s+/g, '-');
+      saveAs(content, `CCI_${topicSlug}_Watermark_${date}.zip`);
+    } catch (err) {
+      setError('Failed to generate all watermarks. Please try again.');
+      console.error(err);
+    } finally {
+      setIsGeneratingAll(false);
+      setShowDownloadMenu(false);
+    }
   };
 
   const handleEventLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -535,10 +619,52 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                           <div className="text-[12px] text-[var(--text-muted)]">Compressed folder</div>
                         </div>
                       </button>
+
+                      <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
+
+                      <button
+                        onClick={() => { handleDownloadAllCampuses(); }}
+                        disabled={!topic.trim()}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">All Campuses</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Download for all {campuses.filter((c) => c.active).length} campuses</div>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
               </>
+            )}
+
+            {/* Progress Modal */}
+            {isGeneratingAll && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+                <div className="w-full max-w-[300px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-6 border border-[var(--border-strong)]">
+                  <div className="text-center">
+                    <svg className="animate-spin h-8 w-8 text-[var(--brand-red)] mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Generating All Campuses</h3>
+                    <p className="text-[13px] text-[var(--text-muted)] mb-3">
+                      {progress.campusName} ({progress.current} of {progress.total})
+                    </p>
+                    <div className="w-full h-2 bg-[var(--surface-subtle)] rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[var(--brand-red)] transition-all duration-300"
+                        style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

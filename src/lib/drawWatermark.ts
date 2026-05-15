@@ -199,7 +199,8 @@ interface DocumentaryLayoutConfig {
   badgeHeight: number;
   badgePaddingLeft: number;
   badgeFontSize: number;
-  tileSize: number;
+  tileWidth: number;
+  tileHeight: number;
   tileX: number;
   tileY: number;
   logoWidth: number;
@@ -229,16 +230,20 @@ export async function renderDocumentaryWatermark(
 
   // ── Badge ──────────────────────────────────────────────────────────────────
   const serviceLabel = DOCUMENTARY_SERVICE_LABELS[payload.serviceType];
+  // Strip spaces from each segment so there is no whitespace in the badge text
+  const topicNoSpaces = payload.topic.replace(/\s+/g, '');
+  const campusNoSpaces = payload.campusName.replace(/\s+/g, '');
   const badgeText =
     payload.serviceType === 'event'
-      ? `${payload.topic}/${payload.campusName}`
-      : `${serviceLabel}/${payload.topic}/${payload.campusName}`;
+      ? `${topicNoSpaces}/${campusNoSpaces}`
+      : `${serviceLabel}/${topicNoSpaces}/${campusNoSpaces}`;
 
-  ctx.font = `700 ${layout.badgeFontSize}px Lato, sans-serif`;
+  // Use the same font weight as topic/theme in the normal watermark (900)
+  ctx.font = `${DESIGN_TOKENS.typography.topicWeight} ${layout.badgeFontSize}px Lato, sans-serif`;
   const textMetrics = ctx.measureText(badgeText);
   const textWidth = textMetrics.width;
   const badgeWidth = textWidth + layout.badgePaddingLeft * 2;
-  const badgeX = layout.width - badgeWidth; // right-anchored, extends off right edge to feel flush
+  const badgeX = layout.width - badgeWidth;
 
   ctx.fillStyle = DESIGN_TOKENS.colors.docBadge;
   ctx.fillRect(badgeX, layout.badgeY, badgeWidth, layout.badgeHeight);
@@ -249,14 +254,14 @@ export async function renderDocumentaryWatermark(
   const textY = layout.badgeY + layout.badgeHeight / 2 + layout.badgeFontSize * 0.35;
   ctx.fillText(badgeText, textX, textY);
 
-  // ── Red Tile Box ───────────────────────────────────────────────────────────
+  // ── Red Tile Box (209 × 175) ──────────────────────────────────────────────
   ctx.fillStyle = DESIGN_TOKENS.colors.tileRed;
-  ctx.fillRect(layout.tileX, layout.tileY, layout.tileSize, layout.tileSize);
+  ctx.fillRect(layout.tileX, layout.tileY, layout.tileWidth, layout.tileHeight);
 
   // ── CCI Logo (centred inside the red tile) ─────────────────────────────────
   if (logoImage) {
-    const logoX = layout.tileX + (layout.tileSize - layout.logoWidth) / 2;
-    const logoY = layout.tileY + (layout.tileSize - layout.logoHeight) / 2;
+    const logoX = layout.tileX + (layout.tileWidth - layout.logoWidth) / 2;
+    const logoY = layout.tileY + (layout.tileHeight - layout.logoHeight) / 2;
     ctx.drawImage(logoImage, logoX, logoY, layout.logoWidth, layout.logoHeight);
   }
 

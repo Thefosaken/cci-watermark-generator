@@ -38,6 +38,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, campusName: '' });
+  const [lastAddressKey, setLastAddressKey] = useState('');
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -59,7 +60,12 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       });
   }, [logoUrl]);
 
-  useEffect(() => {
+  // Reset the address field to the campus default whenever the campus or
+  // service type changes. Adjusting state during render (React-recommended for
+  // prop-derived state) avoids the extra cascading render an effect would cause.
+  const addressKey = selectedCampus ? `${selectedCampus.id}|${serviceType}` : '';
+  if (addressKey !== lastAddressKey) {
+    setLastAddressKey(addressKey);
     if (selectedCampus) {
       let addr = selectedCampus.address;
       if (serviceType === 'midweek' && selectedCampus.midweekAddress) {
@@ -69,20 +75,9 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       }
       setAddress(addr);
     }
-  }, [selectedCampus, serviceType]);
+  }
 
   const canGenerate = selectedCampus && topic.trim() && logoLoaded;
-
-  // Live preview for background color and scale
-  useEffect(() => {
-    if (serviceType === 'event' && portraitPreview && !isGenerating && canGenerate) {
-      const timer = setTimeout(() => {
-        handleGenerate();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale]);
 
   const handleGenerate = async () => {
     if (!selectedCampus || !topic.trim()) {
@@ -146,6 +141,18 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       setIsGenerating(false);
     }
   };
+
+  // Live preview — regenerate when the event background colour or logo scale
+  // changes. Declared after handleGenerate so it references a defined value.
+  useEffect(() => {
+    if (serviceType === 'event' && portraitPreview && !isGenerating && canGenerate) {
+      const timer = setTimeout(() => {
+        handleGenerate();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventBgColor, eventLogoScale]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -556,7 +563,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h4 className="text-[14px] font-semibold text-[var(--text)]">Landscape</h4>
-                      <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • 16:9</p>
+                      <p className="text-[12px] text-[var(--text-muted)]">1620 × 1080 • 3:2</p>
                     </div>
                   </div>
                   <div className="relative w-full aspect-[3/2] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
@@ -591,7 +598,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="text-[14px] font-semibold text-[var(--text)]">Documentary Landscape</h4>
-                        <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • Overlay</p>
+                        <p className="text-[12px] text-[var(--text-muted)]">1620 × 1080 • Overlay</p>
                       </div>
                     </div>
                     <div className="relative w-full aspect-[3/2] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">

@@ -118,7 +118,7 @@ export function CampusSelector({ campuses, value, serviceType, onChange }: Campu
                   setIsOpen(false);
                 }}
               >
-                <span className="text-[14px] font-medium text-[var(--brand-red)]">Use "{search.trim()}"</span>
+                <span className="text-[14px] font-medium text-[var(--brand-red)]">Use &quot;{search.trim()}&quot;</span>
                 <span className="text-[12px] text-[var(--text-muted)] mt-0.5">Create custom campus</span>
               </div>
             )}

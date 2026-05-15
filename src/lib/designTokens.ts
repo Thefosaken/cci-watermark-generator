@@ -55,7 +55,7 @@ export const DOCUMENTARY_LAYOUTS = {
     width: 1080,
     height: 1350,
     // Badge: right-anchored black strip, ~63% down
-    badgeY: 865,
+    badgeY: 758, // bottom of strip + 342px gap = top of red tile (1175)
     badgeHeight: 75,
     badgePaddingLeft: 40,
     badgeFontSize: 20,
@@ -72,7 +72,7 @@ export const DOCUMENTARY_LAYOUTS = {
     width: 1920,
     height: 1080,
     // Badge: right-anchored black strip, vertically centred
-    badgeY: 460,
+    badgeY: 493, // bottom of strip + 342px gap = top of red tile (905)
     badgeHeight: 70,
     badgePaddingLeft: 40,
     badgeFontSize: 20,

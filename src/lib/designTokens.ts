@@ -32,13 +32,13 @@ export const LAYOUTS = {
     cityFontSize: 15.17,
   },
   landscape: {
-    width: 1920,
+    width: 1620,
     height: 1080,
     barHeight: 74,
     tileWidth: 209,
     tileVisibleHeight: 187,
     barY: 941,
-    tileX: 856,
+    tileX: 706,
     tileY: 893,
     logoWidth: 142,
     logoHeight: 69,
@@ -69,7 +69,7 @@ export const DOCUMENTARY_LAYOUTS = {
     logoHeight: 69,
   },
   landscape: {
-    width: 1920,
+    width: 1620,
     height: 1080,
     // Badge: right-anchored black strip, vertically centred
     badgeY: 476, // bottom of strip + 342px gap = top of red tile (905)
@@ -79,7 +79,7 @@ export const DOCUMENTARY_LAYOUTS = {
     // Red tile box: centred, near bottom (209 × 175)
     tileWidth: 209,
     tileHeight: 175,
-    tileX: (1920 - 209) / 2,
+    tileX: (1620 - 209) / 2,
     tileY: 1080 - 175, // flush with bottom of frame
     // Logo inside tile
     logoWidth: 142,

@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { ServiceType, Campus, WatermarkPayload } from '@/types/watermark';
 import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
-import { renderWatermark, loadImage } from '@/lib/drawWatermark';
-import { generateFilename } from '@/lib/filename';
+import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
+import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
 import { ChromePicker } from 'react-color';
 
 const PRESET_COLORS = [
@@ -28,6 +28,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [eventLogoScale, setEventLogoScale] = useState(100);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
   const [landscapePreview, setLandscapePreview] = useState<string | null>(null);
+  const [docPortraitPreview, setDocPortraitPreview] = useState<string | null>(null);
+  const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoLoaded, setLogoLoaded] = useState(false);
@@ -108,13 +110,17 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         eventLogoRef.current = evtImg;
       }
 
-      const [portrait, landscape] = await Promise.all([
+      const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
         renderWatermark(payload, 'portrait', logoRef.current, evtImg),
         renderWatermark(payload, 'landscape', logoRef.current, evtImg),
+        renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
+        renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
       ]);
 
       setPortraitPreview(portrait.url);
       setLandscapePreview(landscape.url);
+      setDocPortraitPreview(docPortrait.url);
+      setDocLandscapePreview(docLandscape.url);
     } catch (err) {
       setError('Failed to generate watermark. Please try again.');
       console.error(err);
@@ -148,6 +154,17 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     const landscapeName = generateFilename(selectedCampus.name, serviceType, topic, 'Landscape');
     saveAs(portraitBlob, portraitName);
     saveAs(landscapeBlob, landscapeName);
+  };
+
+  const handleDownloadDocumentary = async () => {
+    if (!docPortraitPreview || !docLandscapePreview || !selectedCampus) return;
+    const { saveAs } = await import('file-saver');
+    const docPortraitBlob = await fetch(docPortraitPreview).then((r) => r.blob());
+    const docLandscapeBlob = await fetch(docLandscapePreview).then((r) => r.blob());
+    const docPortraitName = generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait');
+    const docLandscapeName = generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape');
+    saveAs(docPortraitBlob, docPortraitName);
+    saveAs(docLandscapeBlob, docLandscapeName);
   };
 
   const handleAddToZip = async () => {
@@ -221,17 +238,25 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
           eventLogoScale,
         };
 
-        const [portrait, landscape] = await Promise.all([
+        const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
           renderWatermark(payload, 'portrait', logoRef.current, undefined),
           renderWatermark(payload, 'landscape', logoRef.current, undefined),
+          renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
+          renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
         ]);
 
         const portraitBlob = await fetch(portrait.url).then((r) => r.blob());
         const landscapeBlob = await fetch(landscape.url).then((r) => r.blob());
+        const docPortraitBlob = await fetch(docPortrait.url).then((r) => r.blob());
+        const docLandscapeBlob = await fetch(docLandscape.url).then((r) => r.blob());
 
-        const folder = zip.folder(campus.name);
-        folder?.file(`${campus.name}-PORTRAIT.png`, portraitBlob);
-        folder?.file(`${campus.name}-LANDSCAPE.png`, landscapeBlob);
+        const campusFolder = zip.folder(campus.name);
+        const normalFolder = campusFolder?.folder('Normal');
+        const docFolder = campusFolder?.folder('Documentary');
+        normalFolder?.file(`${campus.name}-PORTRAIT.png`, portraitBlob);
+        normalFolder?.file(`${campus.name}-LANDSCAPE.png`, landscapeBlob);
+        docFolder?.file(`${campus.name}-Documentary-PORTRAIT.png`, docPortraitBlob);
+        docFolder?.file(`${campus.name}-Documentary-LANDSCAPE.png`, docLandscapeBlob);
       }
 
       const content = await zip.generateAsync({ type: 'blob' });
@@ -486,31 +511,74 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-[14px] font-semibold text-[var(--text)]">Portrait</h4>
-                    <p className="text-[12px] text-[var(--text-muted)]">1080 × 1350 • 4:5</p>
-                  </div>
-                </div>
-                <div className="relative w-full aspect-[4/5] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
-                  <img src={portraitPreview} alt="Portrait preview" className="w-full h-full object-contain" />
-                </div>
+            {/* Normal Watermarks */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Normal Watermark</span>
+                <div className="flex-1 h-px bg-[var(--border)]" />
               </div>
-
-              <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-[14px] font-semibold text-[var(--text)]">Landscape</h4>
-                    <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • 16:9</p>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-[14px] font-semibold text-[var(--text)]">Portrait</h4>
+                      <p className="text-[12px] text-[var(--text-muted)]">1080 × 1350 • 4:5</p>
+                    </div>
+                  </div>
+                  <div className="relative w-full aspect-[4/5] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                    <img src={portraitPreview} alt="Portrait preview" className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <div className="relative w-full aspect-video rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
-                  <img src={landscapePreview} alt="Landscape preview" className="w-full h-full object-contain" />
+
+                <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-[14px] font-semibold text-[var(--text)]">Landscape</h4>
+                      <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • 16:9</p>
+                    </div>
+                  </div>
+                  <div className="relative w-full aspect-video rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                    <img src={landscapePreview} alt="Landscape preview" className="w-full h-full object-contain" />
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Documentary Watermarks */}
+            {docPortraitPreview && docLandscapePreview && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Documentary Watermark</span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="text-[11px] text-[var(--text-faint)] bg-[var(--surface-subtle)] px-2 py-0.5 rounded-full border border-[var(--border)]">Transparent PNG</span>
+                </div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                  <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-[14px] font-semibold text-[var(--text)]">Documentary Portrait</h4>
+                        <p className="text-[12px] text-[var(--text-muted)]">1080 × 1350 • Overlay</p>
+                      </div>
+                    </div>
+                    <div className="relative w-full aspect-[4/5] rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                      <img src={docPortraitPreview} alt="Documentary Portrait preview" className="w-full h-full object-contain" />
+                    </div>
+                  </div>
+
+                  <div className="bg-[var(--surface)] p-4 rounded-[16px] border border-[var(--border)] flex flex-col group">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-[14px] font-semibold text-[var(--text)]">Documentary Landscape</h4>
+                        <p className="text-[12px] text-[var(--text-muted)]">1920 × 1080 • Overlay</p>
+                      </div>
+                    </div>
+                    <div className="relative w-full aspect-video rounded-[8px] overflow-hidden border border-[var(--border)] flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
+                      <img src={docLandscapePreview} alt="Documentary Landscape preview" className="w-full h-full object-contain" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal */}
             {showDownloadMenu && (
@@ -617,6 +685,26 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                         <div>
                           <div className="font-medium text-[13px] text-[var(--text)]">Archive to ZIP</div>
                           <div className="text-[12px] text-[var(--text-muted)]">Compressed folder</div>
+                        </div>
+                      </button>
+
+                      <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
+
+                      <button
+                        onClick={() => { handleDownloadDocumentary(); setShowDownloadMenu(false); }}
+                        disabled={!docPortraitPreview || !docLandscapePreview}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">Documentary Only</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Transparent overlay PNGs</div>
                         </div>
                       </button>
 

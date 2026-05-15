@@ -1,5 +1,5 @@
 import { WatermarkPayload } from '@/types/watermark';
-import { DESIGN_TOKENS, LAYOUTS, SERVICE_LABELS } from './designTokens';
+import { DESIGN_TOKENS, LAYOUTS, SERVICE_LABELS, DOCUMENTARY_LAYOUTS, DOCUMENTARY_SERVICE_LABELS } from './designTokens';
 import { fitTextToWidth } from './fitText';
 
 export type Orientation = 'portrait' | 'landscape';
@@ -183,4 +183,76 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Documentary Watermark Renderer
+// Transparent background overlay with:
+//   • Right-anchored grey semi-transparent badge (Service / Topic / Campus)
+//   • CCI logo square centred at the bottom
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DocumentaryLayoutConfig {
+  width: number;
+  height: number;
+  badgeY: number;
+  badgeHeight: number;
+  badgePaddingLeft: number;
+  badgeFontSize: number;
+  logoWidth: number;
+  logoHeight: number;
+  logoX: number;
+  logoY: number;
+}
+
+export async function renderDocumentaryWatermark(
+  payload: WatermarkPayload,
+  orientation: Orientation,
+  logoImage: HTMLImageElement
+): Promise<{ canvas: HTMLCanvasElement; url: string }> {
+  if (typeof document !== 'undefined' && document.fonts) {
+    await document.fonts.ready;
+  }
+
+  const layout = DOCUMENTARY_LAYOUTS[orientation] as DocumentaryLayoutConfig;
+  const scale = 3;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = layout.width * scale;
+  canvas.height = layout.height * scale;
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(scale, scale);
+
+  // Fully transparent background
+  ctx.clearRect(0, 0, layout.width, layout.height);
+
+  // ── Badge ──────────────────────────────────────────────────────────────────
+  const serviceLabel = DOCUMENTARY_SERVICE_LABELS[payload.serviceType];
+  const badgeText =
+    payload.serviceType === 'event'
+      ? `${payload.topic}/${payload.campusName}`
+      : `${serviceLabel}/${payload.topic}/${payload.campusName}`;
+
+  ctx.font = `700 ${layout.badgeFontSize}px Lato, sans-serif`;
+  const textMetrics = ctx.measureText(badgeText);
+  const textWidth = textMetrics.width;
+  const badgeWidth = textWidth + layout.badgePaddingLeft * 2;
+  const badgeX = layout.width - badgeWidth; // right-anchored, extends off right edge to feel flush
+
+  ctx.fillStyle = DESIGN_TOKENS.colors.docBadge;
+  ctx.fillRect(badgeX, layout.badgeY, badgeWidth, layout.badgeHeight);
+
+  ctx.fillStyle = DESIGN_TOKENS.colors.textWhite;
+  ctx.textAlign = 'center';
+  const textX = badgeX + badgeWidth / 2;
+  const textY = layout.badgeY + layout.badgeHeight / 2 + layout.badgeFontSize * 0.35;
+  ctx.fillText(badgeText, textX, textY);
+
+  // ── CCI Logo ───────────────────────────────────────────────────────────────
+  if (logoImage) {
+    ctx.drawImage(logoImage, layout.logoX, layout.logoY, layout.logoWidth, layout.logoHeight);
+  }
+
+  const url = canvas.toDataURL('image/png');
+  return { canvas, url };
 }

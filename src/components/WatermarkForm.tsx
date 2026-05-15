@@ -41,10 +41,11 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
-  const portraitCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const landscapeCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const docPortraitCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const docLandscapeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Pre-generated blobs for instant downloads (populated during handleGenerate)
+  const portraitBlobRef = useRef<Blob | null>(null);
+  const landscapeBlobRef = useRef<Blob | null>(null);
+  const docPortraitBlobRef = useRef<Blob | null>(null);
+  const docLandscapeBlobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     loadImage(logoUrl)
@@ -125,11 +126,19 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       setLandscapePreview(landscape.url);
       setDocPortraitPreview(docPortrait.url);
       setDocLandscapePreview(docLandscape.url);
-      // Store canvas refs for direct high-quality blob export
-      portraitCanvasRef.current = portrait.canvas;
-      landscapeCanvasRef.current = landscape.canvas;
-      docPortraitCanvasRef.current = docPortrait.canvas;
-      docLandscapeCanvasRef.current = docLandscape.canvas;
+      // Pre-generate blobs now so all individual downloads are instant
+      const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
+        new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'));
+      const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+        toBlob(portrait.canvas),
+        toBlob(landscape.canvas),
+        toBlob(docPortrait.canvas),
+        toBlob(docLandscape.canvas),
+      ]);
+      portraitBlobRef.current = pBlob;
+      landscapeBlobRef.current = lBlob;
+      docPortraitBlobRef.current = dpBlob;
+      docLandscapeBlobRef.current = dlBlob;
     } catch (err) {
       setError('Failed to generate watermark. Please try again.');
       console.error(err);
@@ -138,65 +147,48 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     }
   };
 
-  // Convert canvas directly to blob — avoids base64 round-trip for maximum quality
-  const canvasToBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
-    new Promise((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas export failed'))), 'image/png')
-    );
+  // Helper — promisify canvas.toBlob
+  const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
+    new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'));
 
+  // Individual downloads use pre-cached blobs — instant click response
   const handleDownloadPortrait = async () => {
-    if (!portraitCanvasRef.current || !selectedCampus) return;
+    if (!portraitBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    const blob = await canvasToBlob(portraitCanvasRef.current);
-    saveAs(blob, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
+    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
   };
 
   const handleDownloadLandscape = async () => {
-    if (!landscapeCanvasRef.current || !selectedCampus) return;
+    if (!landscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    const blob = await canvasToBlob(landscapeCanvasRef.current);
-    saveAs(blob, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
   };
 
   const handleDownloadBoth = async () => {
-    if (!portraitCanvasRef.current || !landscapeCanvasRef.current || !selectedCampus) return;
+    if (!portraitBlobRef.current || !landscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    const [portraitBlob, landscapeBlob] = await Promise.all([
-      canvasToBlob(portraitCanvasRef.current),
-      canvasToBlob(landscapeCanvasRef.current),
-    ]);
-    saveAs(portraitBlob, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
-    saveAs(landscapeBlob, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
+    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
   };
 
   const handleDownloadDocumentary = async () => {
-    if (!docPortraitCanvasRef.current || !docLandscapeCanvasRef.current || !selectedCampus) return;
+    if (!docPortraitBlobRef.current || !docLandscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    const [docPortraitBlob, docLandscapeBlob] = await Promise.all([
-      canvasToBlob(docPortraitCanvasRef.current),
-      canvasToBlob(docLandscapeCanvasRef.current),
-    ]);
-    saveAs(docPortraitBlob, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
-    saveAs(docLandscapeBlob, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(docPortraitBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
+    saveAs(docLandscapeBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
   };
 
   const handleAddToZip = async () => {
-    if (!portraitCanvasRef.current || !landscapeCanvasRef.current || !selectedCampus) return;
+    if (!portraitBlobRef.current || !landscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
     const JSZip = (await import('jszip')).default;
-    const [portraitBlob, landscapeBlob, docPortraitBlob, docLandscapeBlob] = await Promise.all([
-      canvasToBlob(portraitCanvasRef.current),
-      canvasToBlob(landscapeCanvasRef.current),
-      docPortraitCanvasRef.current ? canvasToBlob(docPortraitCanvasRef.current) : Promise.resolve(null),
-      docLandscapeCanvasRef.current ? canvasToBlob(docLandscapeCanvasRef.current) : Promise.resolve(null),
-    ]);
     const zip = new JSZip();
     const normalFolder = zip.folder('Normal');
     const docFolder = zip.folder('Documentary');
-    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'), portraitBlob);
-    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'), landscapeBlob);
-    if (docPortraitBlob) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'), docPortraitBlob);
-    if (docLandscapeBlob) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'), docLandscapeBlob);
+    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'), portraitBlobRef.current);
+    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'), landscapeBlobRef.current);
+    if (docPortraitBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'), docPortraitBlobRef.current);
+    if (docLandscapeBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'), docLandscapeBlobRef.current);
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, `${selectedCampus.name.replace(/\s/g, '')}-${topic.replace(/\s/g, '')}.zip`);
   };
@@ -235,54 +227,58 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
-      for (let i = 0; i < activeCampuses.length; i++) {
-        const campus = activeCampuses[i];
-        setProgress({ current: i + 1, total: activeCampuses.length, campusName: campus.name });
+      // Batch parallel rendering — process BATCH_SIZE campuses simultaneously
+      const BATCH_SIZE = 4;
+      for (let i = 0; i < activeCampuses.length; i += BATCH_SIZE) {
+        const batch = activeCampuses.slice(i, Math.min(i + BATCH_SIZE, activeCampuses.length));
+        setProgress({ current: i + 1, total: activeCampuses.length, campusName: batch.map((c) => c.name).join(', ') });
 
-        let addr = campus.address;
-        if (serviceType === 'midweek' && campus.midweekAddress) {
-          addr = campus.midweekAddress;
-        } else if (serviceType === 'sunday' && campus.sundayAddress) {
-          addr = campus.sundayAddress;
-        }
+        const batchResults = await Promise.all(
+          batch.map(async (campus) => {
+            let addr = campus.address;
+            if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+            else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
 
-        const payload: WatermarkPayload = {
-          serviceType,
-          topic: topic.trim(),
-          campusName: campus.name,
-          cityLabel: campus.cityLabel,
-          address: addr.trim(),
-          eventLogoUrl: eventLogo || undefined,
-          eventBgColor,
-          eventLogoScale,
-        };
+            const payload: WatermarkPayload = {
+              serviceType,
+              topic: topic.trim(),
+              campusName: campus.name,
+              cityLabel: campus.cityLabel,
+              address: addr.trim(),
+              eventLogoUrl: eventLogo || undefined,
+              eventBgColor,
+              eventLogoScale,
+            };
 
-        const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
-          renderWatermark(payload, 'portrait', logoRef.current, undefined),
-          renderWatermark(payload, 'landscape', logoRef.current, undefined),
-          renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
-          renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
-        ]);
+            const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+              renderWatermark(payload, 'portrait', logoRef.current!, undefined),
+              renderWatermark(payload, 'landscape', logoRef.current!, undefined),
+              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+            ]);
 
-        const canvasBlobOf = (canvas: HTMLCanvasElement): Promise<Blob> =>
-          new Promise((resolve, reject) =>
-            canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
-          );
+            const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+              toBlob(portrait.canvas),
+              toBlob(landscape.canvas),
+              toBlob(docPortrait.canvas),
+              toBlob(docLandscape.canvas),
+            ]);
 
-        const [portraitBlob, landscapeBlob, docPortraitBlob, docLandscapeBlob] = await Promise.all([
-          canvasBlobOf(portrait.canvas),
-          canvasBlobOf(landscape.canvas),
-          canvasBlobOf(docPortrait.canvas),
-          canvasBlobOf(docLandscape.canvas),
-        ]);
+            return { campus, pBlob, lBlob, dpBlob, dlBlob };
+          })
+        );
 
-        const campusFolder = zip.folder(campus.name);
-        const normalFolder = campusFolder?.folder('Normal');
-        const docFolder = campusFolder?.folder('Documentary');
-        normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Portrait'), portraitBlob);
-        normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Landscape'), landscapeBlob);
-        docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Portrait'), docPortraitBlob);
-        docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Landscape'), docLandscapeBlob);
+        batchResults.forEach(({ campus, pBlob, lBlob, dpBlob, dlBlob }) => {
+          const campusFolder = zip.folder(campus.name);
+          const normalFolder = campusFolder?.folder('Normal');
+          const docFolder = campusFolder?.folder('Documentary');
+          normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Portrait'), pBlob);
+          normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Landscape'), lBlob);
+          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Portrait'), dpBlob);
+          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Landscape'), dlBlob);
+        });
+
+        setProgress({ current: i + batch.length, total: activeCampuses.length, campusName: batch[batch.length - 1].name });
       }
 
       const content = await zip.generateAsync({ type: 'blob' });

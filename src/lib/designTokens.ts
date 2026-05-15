@@ -94,7 +94,7 @@ export const SERVICE_LABELS = {
 } as const;
 
 export const DOCUMENTARY_SERVICE_LABELS = {
-  midweek: 'Midweek',
+  midweek: 'MDWK',
   sunday: 'Sunday',
   event: 'Special',
 } as const;

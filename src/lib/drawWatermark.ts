@@ -238,8 +238,8 @@ export async function renderDocumentaryWatermark(
       ? `${topicNoSpaces}/${campusNoSpaces}`
       : `${serviceLabel}/${topicNoSpaces}/${campusNoSpaces}`;
 
-  // Use the same font weight as topic/theme in the normal watermark (900)
-  ctx.font = `${DESIGN_TOKENS.typography.topicWeight} ${layout.badgeFontSize}px Lato, sans-serif`;
+  // Use the same font as topic/theme in the normal watermark ("Expose Bold")
+  ctx.font = `700 ${layout.badgeFontSize}px "Expose Bold", sans-serif`;
   const textMetrics = ctx.measureText(badgeText);
   const textWidth = textMetrics.width;
   const badgeWidth = textWidth + layout.badgePaddingLeft * 2;

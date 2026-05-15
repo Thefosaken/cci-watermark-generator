@@ -63,7 +63,7 @@ export const DOCUMENTARY_LAYOUTS = {
     tileWidth: 209,
     tileHeight: 175,
     tileX: (1080 - 209) / 2,
-    tileY: 1141,
+    tileY: 1350 - 175, // flush with bottom of frame
     // Logo inside tile
     logoWidth: 142,
     logoHeight: 69,
@@ -80,7 +80,7 @@ export const DOCUMENTARY_LAYOUTS = {
     tileWidth: 209,
     tileHeight: 175,
     tileX: (1920 - 209) / 2,
-    tileY: 871,
+    tileY: 1080 - 175, // flush with bottom of frame
     // Logo inside tile
     logoWidth: 142,
     logoHeight: 69,

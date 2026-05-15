@@ -1,5 +1,60 @@
 [
   {
+    "id": "abeokuta",
+    "name": "Abeokuta",
+    "cityLabel": "ABEOKUTA",
+    "address": "Neu Gate Exclusive Hotel & Events Centre",
+    "sundayAddress": "Neu Gate Exclusive Hotel & Events Centre",
+    "midweekAddress": "Neu Gate Exclusive Hotel & Events Centre",
+    "country": "Nigeria",
+    "region": "Ogun",
+    "active": true
+  },
+  {
+    "id": "ago",
+    "name": "Ago",
+    "cityLabel": "AGO",
+    "address": "Hillcrest Events Center, Ago Palace Way",
+    "sundayAddress": "Hillcrest Events Center, Ago Palace Way",
+    "midweekAddress": "Hillcrest Events Center, Ago Palace Way",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "ajah",
+    "name": "Ajah",
+    "cityLabel": "AJAH",
+    "address": "5th & Eden Event Centre, Eti-Osa, Lagos",
+    "sundayAddress": "5th & Eden Event Centre, Eti-Osa, Lagos",
+    "midweekAddress": "5th & Eden Event Centre, Eti-Osa, Lagos",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "akpajo",
+    "name": "Akpajo",
+    "cityLabel": "AKPAJO",
+    "address": "Atwil Events Center, Akpajo",
+    "sundayAddress": "Atwil Events Center, Akpajo",
+    "midweekAddress": "Atwil Events Center, Akpajo",
+    "country": "Nigeria",
+    "region": "Rivers",
+    "active": true
+  },
+  {
+    "id": "akure",
+    "name": "Akure",
+    "cityLabel": "AKURE",
+    "address": "Celebr8 Centre, Alagbaka GRA",
+    "sundayAddress": "Celebr8 Centre, Alagbaka GRA",
+    "midweekAddress": "Celebr8 Centre, Alagbaka GRA",
+    "country": "Nigeria",
+    "region": "Ondo",
+    "active": true
+  },
+  {
     "id": "amsterdam",
     "name": "Amsterdam",
     "cityLabel": "AMSTERDAM",
@@ -8,6 +63,28 @@
     "midweekAddress": "Magnolia Room Hotel Novotel, 1083 AD",
     "country": "Netherlands",
     "region": "North Holland",
+    "active": true
+  },
+  {
+    "id": "austin",
+    "name": "Austin",
+    "cityLabel": "AUSTIN",
+    "address": "Regal Gateway, Stonelake Blvd",
+    "sundayAddress": "Regal Gateway, Stonelake Blvd",
+    "midweekAddress": "Regal Gateway, Stonelake Blvd",
+    "country": "USA",
+    "region": "Texas",
+    "active": true
+  },
+  {
+    "id": "barrie",
+    "name": "Barrie",
+    "cityLabel": "BARRIE",
+    "address": "Cineplex Barrie North, Cundles Rd E",
+    "sundayAddress": "Cineplex Barrie North, Cundles Rd E",
+    "midweekAddress": "Cineplex Barrie North, Cundles Rd E",
+    "country": "Canada",
+    "region": "Ontario",
     "active": true
   },
   {
@@ -66,6 +143,17 @@
     "active": true
   },
   {
+    "id": "boston",
+    "name": "Boston",
+    "cityLabel": "BOSTON",
+    "address": "40 Granite Street, Cambridge",
+    "sundayAddress": "40 Granite Street, Cambridge",
+    "midweekAddress": "40 Granite Street, Cambridge",
+    "country": "USA",
+    "region": "Massachusetts",
+    "active": true
+  },
+  {
     "id": "bristol",
     "name": "Bristol",
     "cityLabel": "BRISTOL",
@@ -77,6 +165,28 @@
     "active": true
   },
   {
+    "id": "calabar",
+    "name": "Calabar",
+    "cityLabel": "CALABAR",
+    "address": "The Tent, Municipal Gardens, Calabar",
+    "sundayAddress": "The Tent, Municipal Gardens, Calabar",
+    "midweekAddress": "The Tent, Municipal Gardens, Calabar",
+    "country": "Nigeria",
+    "region": "Cross River",
+    "active": true
+  },
+  {
+    "id": "calgary",
+    "name": "Calgary",
+    "cityLabel": "CALGARY",
+    "address": "Cineplex Odeon Crowfoot, AB T3G 2L5",
+    "sundayAddress": "Cineplex Odeon Crowfoot, AB T3G 2L5",
+    "midweekAddress": "Cineplex Odeon Crowfoot, AB T3G 2L5",
+    "country": "Canada",
+    "region": "Alberta",
+    "active": true
+  },
+  {
     "id": "coventry",
     "name": "Coventry",
     "cityLabel": "COVENTRY",
@@ -85,6 +195,28 @@
     "midweekAddress": "Drapers' Hall, Bayley Ln, CV1 5RN",
     "country": "UK",
     "region": "West Midlands",
+    "active": true
+  },
+  {
+    "id": "dallas",
+    "name": "Dallas",
+    "cityLabel": "DALLAS",
+    "address": "Grand Center, Plano, Texas 75075",
+    "sundayAddress": "Grand Center, Plano, Texas 75075",
+    "midweekAddress": "Grand Center, Plano, Texas 75075",
+    "country": "USA",
+    "region": "Texas",
+    "active": true
+  },
+  {
+    "id": "dmv",
+    "name": "DMV",
+    "cityLabel": "DMV",
+    "address": "3501 Windom Rd, Brentwood, Maryland",
+    "sundayAddress": "3501 Windom Rd, Brentwood, Maryland",
+    "midweekAddress": "3501 Windom Rd, Brentwood, Maryland",
+    "country": "USA",
+    "region": "Maryland",
     "active": true
   },
   {
@@ -121,6 +253,39 @@
     "active": true
   },
   {
+    "id": "edmonton",
+    "name": "Edmonton",
+    "cityLabel": "EDMONTON",
+    "address": "Continental Inn and Suites, T5P 4A8",
+    "sundayAddress": "Continental Inn and Suites, T5P 4A8",
+    "midweekAddress": "Continental Inn and Suites, T5P 4A8",
+    "country": "Canada",
+    "region": "Alberta",
+    "active": true
+  },
+  {
+    "id": "egbeda",
+    "name": "Egbeda",
+    "cityLabel": "EGBEDA",
+    "address": "Paraclete Event Centre, Shasha Rd",
+    "sundayAddress": "Paraclete Event Centre, Shasha Rd",
+    "midweekAddress": "Paraclete Event Centre, Shasha Rd",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "enugu",
+    "name": "Enugu",
+    "cityLabel": "ENUGU",
+    "address": "Vee-Ai-Pee Event Centre, New Haven",
+    "sundayAddress": "Vee-Ai-Pee Event Centre, New Haven",
+    "midweekAddress": "Vee-Ai-Pee Event Centre, New Haven",
+    "country": "Nigeria",
+    "region": "Enugu",
+    "active": true
+  },
+  {
     "id": "glasgow",
     "name": "Glasgow",
     "cityLabel": "GLASGOW",
@@ -129,6 +294,17 @@
     "midweekAddress": "The Boardwalk, 105 Brunswick, G1 1TF",
     "country": "UK",
     "region": "Scotland",
+    "active": true
+  },
+  {
+    "id": "hamilton",
+    "name": "Hamilton",
+    "cityLabel": "HAMILTON",
+    "address": "HCA Dance Theatre, James St S",
+    "sundayAddress": "HCA Dance Theatre, James St S",
+    "midweekAddress": "HCA Dance Theatre, James St S",
+    "country": "Canada",
+    "region": "Ontario",
     "active": true
   },
   {
@@ -165,6 +341,50 @@
     "active": true
   },
   {
+    "id": "ile-ife",
+    "name": "Ile-Ife",
+    "cityLabel": "ILE-IFE",
+    "address": "Crystal Heritage Events Centre, Parakin",
+    "sundayAddress": "Crystal Heritage Events Centre, Parakin",
+    "midweekAddress": "Crystal Heritage Events Centre, Parakin",
+    "country": "Nigeria",
+    "region": "Osun",
+    "active": true
+  },
+  {
+    "id": "ikorodu",
+    "name": "Ikorodu",
+    "cityLabel": "IKORODU",
+    "address": "Caritas Event Center, Ibeshe",
+    "sundayAddress": "Caritas Event Center, Ibeshe",
+    "midweekAddress": "Caritas Event Center, Ibeshe",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
+  },
+  {
+    "id": "ilorin",
+    "name": "Ilorin",
+    "cityLabel": "ILORIN",
+    "address": "Peace Hall, De Peace Hotel, Tanke Rd.",
+    "sundayAddress": "Peace Hall, De Peace Hotel, Tanke Rd.",
+    "midweekAddress": "Peace Hall, De Peace Hotel, Tanke Rd.",
+    "country": "Nigeria",
+    "region": "Kwara",
+    "active": true
+  },
+  {
+    "id": "kaduna",
+    "name": "Kaduna",
+    "cityLabel": "KADUNA",
+    "address": "Proview Event Centre, Barnawa",
+    "sundayAddress": "Proview Event Centre, Barnawa",
+    "midweekAddress": "Proview Event Centre, Barnawa",
+    "country": "Nigeria",
+    "region": "Kaduna",
+    "active": true
+  },
+  {
     "id": "lagos-island",
     "name": "Lagos Island",
     "cityLabel": "LAGOS ISLAND",
@@ -184,6 +404,17 @@
     "midweekAddress": "Co-op Academy Brierley, Leeds, LS9 0BA",
     "country": "UK",
     "region": "West Yorkshire",
+    "active": true
+  },
+  {
+    "id": "lokogoma",
+    "name": "Lokogoma",
+    "cityLabel": "LOKOGOMA",
+    "address": "Opique Event Centre, Kaura, Abuja",
+    "sundayAddress": "Opique Event Centre, Kaura, Abuja",
+    "midweekAddress": "Opique Event Centre, Kaura, Abuja",
+    "country": "Nigeria",
+    "region": "FCT",
     "active": true
   },
   {
@@ -209,6 +440,28 @@
     "active": true
   },
   {
+    "id": "mararaba",
+    "name": "Mararaba",
+    "cityLabel": "MARARABA",
+    "address": "Wulvan Centre, Abacha Road",
+    "sundayAddress": "Wulvan Centre, Abacha Road",
+    "midweekAddress": "Wulvan Centre, Abacha Road",
+    "country": "Nigeria",
+    "region": "Nasarawa",
+    "active": true
+  },
+  {
+    "id": "mgbuoba",
+    "name": "Mgbuoba",
+    "cityLabel": "MGBUOBA",
+    "address": "Grand Atlantis Centre, NTA Road",
+    "sundayAddress": "Grand Atlantis Centre, NTA Road",
+    "midweekAddress": "Grand Atlantis Centre, NTA Road",
+    "country": "Nigeria",
+    "region": "Rivers",
+    "active": true
+  },
+  {
     "id": "newcastle",
     "name": "Newcastle",
     "cityLabel": "NEWCASTLE",
@@ -231,6 +484,39 @@
     "active": true
   },
   {
+    "id": "osogbo",
+    "name": "Osogbo",
+    "cityLabel": "OSOGBO",
+    "address": "Julie Moradeke Hall, Dada Estate",
+    "sundayAddress": "Julie Moradeke Hall, Dada Estate",
+    "midweekAddress": "Julie Moradeke Hall, Dada Estate",
+    "country": "Nigeria",
+    "region": "Osun",
+    "active": true
+  },
+  {
+    "id": "oshawa",
+    "name": "Oshawa",
+    "cityLabel": "OSHAWA",
+    "address": "Cineplex Odeon Oshawa Cinemas",
+    "sundayAddress": "Cineplex Odeon Oshawa Cinemas",
+    "midweekAddress": "Cineplex Odeon Oshawa Cinemas",
+    "country": "Canada",
+    "region": "Ontario",
+    "active": true
+  },
+  {
+    "id": "ottawa",
+    "name": "Ottawa",
+    "cityLabel": "OTTAWA",
+    "address": "499 Preston Street, Ontario",
+    "sundayAddress": "499 Preston Street, Ontario",
+    "midweekAddress": "499 Preston Street, Ontario",
+    "country": "Canada",
+    "region": "Ontario",
+    "active": true
+  },
+  {
     "id": "south-east-london",
     "name": "South East London",
     "cityLabel": "SOUTH EAST LONDON",
@@ -239,6 +525,17 @@
     "midweekAddress": "Odeon Greenwich, Bugsby Way",
     "country": "UK",
     "region": "London",
+    "active": true
+  },
+  {
+    "id": "toronto",
+    "name": "Toronto",
+    "cityLabel": "TORONTO",
+    "address": "National Events Venue Space, North York",
+    "sundayAddress": "National Events Venue Space, North York",
+    "midweekAddress": "National Events Venue Space, North York",
+    "country": "Canada",
+    "region": "Ontario",
     "active": true
   },
   {
@@ -253,6 +550,28 @@
     "active": true
   },
   {
+    "id": "uyo",
+    "name": "Uyo",
+    "cityLabel": "UYO",
+    "address": "EEMJM Event Center, off Nwaniba Road",
+    "sundayAddress": "EEMJM Event Center, off Nwaniba Road",
+    "midweekAddress": "EEMJM Event Center, off Nwaniba Road",
+    "country": "Nigeria",
+    "region": "Akwa Ibom",
+    "active": true
+  },
+  {
+    "id": "warri",
+    "name": "Warri",
+    "cityLabel": "WARRI",
+    "address": "Eden Suites, off Ogunu Road",
+    "sundayAddress": "Eden Suites, off Ogunu Road",
+    "midweekAddress": "Eden Suites, off Ogunu Road",
+    "country": "Nigeria",
+    "region": "Delta",
+    "active": true
+  },
+  {
     "id": "west-london",
     "name": "West London",
     "cityLabel": "WEST LONDON",
@@ -261,6 +580,28 @@
     "midweekAddress": "Vue Cinemas, Westfield, London W12 7GF",
     "country": "UK",
     "region": "London",
+    "active": true
+  },
+  {
+    "id": "winnipeg",
+    "name": "Winnipeg",
+    "cityLabel": "WINNIPEG",
+    "address": "341 Wilton St, MB R3M 1X3",
+    "sundayAddress": "341 Wilton St, MB R3M 1X3",
+    "midweekAddress": "341 Wilton St, MB R3M 1X3",
+    "country": "Canada",
+    "region": "Manitoba",
+    "active": true
+  },
+  {
+    "id": "yaba",
+    "name": "Yaba",
+    "cityLabel": "YABA",
+    "address": "Paradise Event Arena, Alagomeji",
+    "sundayAddress": "Paradise Event Arena, Alagomeji",
+    "midweekAddress": "Paradise Event Arena, Alagomeji",
+    "country": "Nigeria",
+    "region": "Lagos",
     "active": true
   }
 ]

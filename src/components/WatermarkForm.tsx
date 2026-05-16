@@ -802,10 +802,10 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               </button>
             </div>
 
-            {/* Normal Watermarks */}
+            {/* Service Watermarks */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Normal Watermark</span>
+                <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Service Watermark</span>
                 <div className="flex-1 h-px bg-[var(--border)]" />
               </div>
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { ServiceType, Campus, WatermarkPayload } from '@/types/watermark';
 import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
+import { createDriveFolder, uploadDriveFile, delay } from '@/lib/googleDrive';
 import { ChromePicker } from 'react-color';
 
 const PRESET_COLORS = [
@@ -39,6 +41,19 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, campusName: '' });
   const [lastAddressKey, setLastAddressKey] = useState('');
+  const [isUploadingToDrive, setIsUploadingToDrive] = useState(false);
+  const [driveProgress, setDriveProgress] = useState({ current: 0, total: 0 });
+
+  interface DriveExportPending {
+    campuses: Campus[];
+    serviceType: ServiceType;
+    topic: string;
+    address: string;
+    eventLogo: string | null;
+    eventBgColor: string;
+    eventLogoScale: number;
+  }
+  const driveExportRef = useRef<DriveExportPending | null>(null);
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -59,6 +74,40 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         setLogoLoaded(true);
       });
   }, [logoUrl]);
+
+  const driveLogin = useGoogleLogin({
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    onSuccess: async (tokenResponse) => {
+      const pending = driveExportRef.current;
+      if (!pending) return;
+      try {
+        await performDriveUpload(tokenResponse.access_token, pending);
+      } catch (err) {
+        setError('Google Drive upload failed. Please try again.');
+        console.error(err);
+      } finally {
+        driveExportRef.current = null;
+        setIsGeneratingAll(false);
+        setIsUploadingToDrive(false);
+        setShowDownloadMenu(false);
+      }
+    },
+    onError: () => {
+      setError('Google sign-in was cancelled or failed.');
+      setIsGeneratingAll(false);
+      setIsUploadingToDrive(false);
+      driveExportRef.current = null;
+    },
+  });
+
+  const getActiveDriveCampuses = useCallback(() => {
+    return campuses.filter((campus) => {
+      let addr = campus.address;
+      if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+      else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+      return campus.active && addr.trim();
+    });
+  }, [campuses, serviceType]);
 
   // Reset the address field to the campus default whenever the campus or
   // service type changes. Adjusting state during render (React-recommended for
@@ -299,6 +348,119 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       setIsGeneratingAll(false);
       setShowDownloadMenu(false);
     }
+  };
+
+  const performDriveUpload = async (token: string, pending: DriveExportPending) => {
+    const BATCH_SIZE = 4;
+    const { topic: t, serviceType: st } = pending;
+
+    setIsUploadingToDrive(true);
+
+    const batchResults: Array<{ campus: Campus; pBlob: Blob; lBlob: Blob; dpBlob: Blob; dlBlob: Blob }> = [];
+
+    for (let i = 0; i < pending.campuses.length; i += BATCH_SIZE) {
+      const batch = pending.campuses.slice(i, i + BATCH_SIZE);
+      setProgress({ current: i + 1, total: pending.campuses.length, campusName: batch.map((c) => c.name).join(', ') });
+
+      const results = await Promise.all(
+        batch.map(async (campus) => {
+          let addr = campus.address;
+          if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+          else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+
+          const payload: WatermarkPayload = {
+            serviceType: st,
+            topic: t.trim(),
+            campusName: campus.name,
+            cityLabel: campus.cityLabel,
+            address: addr.trim(),
+            eventLogoUrl: pending.eventLogo || undefined,
+            eventBgColor: pending.eventBgColor,
+            eventLogoScale: pending.eventLogoScale,
+          };
+
+          const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+            renderWatermark(payload, 'portrait', logoRef.current!, undefined),
+            renderWatermark(payload, 'landscape', logoRef.current!, undefined),
+            renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+            renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+          ]);
+
+          const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+            toBlob(portrait.canvas),
+            toBlob(landscape.canvas),
+            toBlob(docPortrait.canvas),
+            toBlob(docLandscape.canvas),
+          ]);
+
+          return { campus, pBlob, lBlob, dpBlob, dlBlob };
+        })
+      );
+
+      batchResults.push(...results);
+      setProgress({ current: i + batch.length, total: pending.campuses.length, campusName: batch[batch.length - 1].name });
+    }
+
+    // Create root folder
+    const date = new Date().toISOString().split('T')[0];
+    const topicSlug = t.trim().replace(/\s+/g, '-');
+    const rootFolderName = `CCI_${topicSlug}_Watermark_${date}`;
+
+    setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
+
+    const rootId = await createDriveFolder(token, rootFolderName);
+
+    const totalFiles = batchResults.length * 4;
+    let uploaded = 0;
+
+    for (const { campus, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
+      const campusId = await createDriveFolder(token, campus.name, rootId);
+      const [serviceId, docId] = await Promise.all([
+        createDriveFolder(token, 'Service', campusId),
+        createDriveFolder(token, 'Documentary', campusId),
+      ]);
+
+      await Promise.all([
+        uploadDriveFile(token, pBlob, generateFilename(campus.name, st, t.trim(), 'Portrait'), serviceId),
+        uploadDriveFile(token, lBlob, generateFilename(campus.name, st, t.trim(), 'Landscape'), serviceId),
+        uploadDriveFile(token, dpBlob, generateDocumentaryFilename(campus.name, st, t.trim(), 'Portrait'), docId),
+        uploadDriveFile(token, dlBlob, generateDocumentaryFilename(campus.name, st, t.trim(), 'Landscape'), docId),
+      ]);
+
+      uploaded += 4;
+      setDriveProgress({ current: uploaded, total: totalFiles });
+      setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
+
+      await delay(200);
+    }
+  };
+
+  const handleDriveExportAll = async () => {
+    if (!topic.trim()) {
+      setError('Please enter a topic before exporting to Google Drive');
+      return;
+    }
+
+    const activeCampuses = getActiveDriveCampuses();
+    if (activeCampuses.length === 0) {
+      setError('No campuses with valid addresses found');
+      return;
+    }
+
+    setError(null);
+    setIsGeneratingAll(true);
+
+    driveExportRef.current = {
+      campuses: activeCampuses,
+      serviceType,
+      topic: topic.trim(),
+      address: address.trim(),
+      eventLogo,
+      eventBgColor,
+      eventLogoScale,
+    };
+
+    driveLogin();
   };
 
   const handleEventLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -750,8 +912,28 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">All Campuses</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">All Campuses (ZIP)</div>
                           <div className="text-[12px] text-[var(--text-muted)]">Download for all {campuses.filter((c) => c.active).length} campuses</div>
+                        </div>
+                      </button>
+
+                      <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
+
+                      <button
+                        onClick={() => { handleDriveExportAll(); }}
+                        disabled={!topic.trim()}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="19.04 8.94 18.07 6.98 16.06 5.14 13.53 4.2 10.81 4.27 8.39 5.42 6.65 7.47 5.74 9.49 5.59 11.57 6.56 14.58 8.56 16.73 11.07 17.83 13.62 17.63 16.06 16.33 17.82 14.21 18.78 11.85 18.74 9.67"></polygon>
+                            <polygon points="12.2 6.99 12.2 12.01 15.58 13.69"></polygon>
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">All Campuses (Google Drive)</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Export directly to your Drive</div>
                         </div>
                       </button>
                     </div>
@@ -763,20 +945,31 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
             {/* Progress Modal */}
             {isGeneratingAll && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-                <div className="w-full max-w-[300px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-6 border border-[var(--border-strong)]">
+                <div className="w-full max-w-[320px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-6 border border-[var(--border-strong)]">
                   <div className="text-center">
                     <svg className="animate-spin h-8 w-8 text-[var(--brand-red)] mx-auto mb-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Generating All Campuses</h3>
-                    <p className="text-[13px] text-[var(--text-muted)] mb-3">
-                      {progress.campusName} ({progress.current} of {progress.total})
-                    </p>
+                    {isUploadingToDrive ? (
+                      <>
+                        <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Uploading to Google Drive</h3>
+                        <p className="text-[13px] text-[var(--text-muted)] mb-3">
+                          {progress.campusName} ({driveProgress.current} of {driveProgress.total} files)
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Generating All Campuses</h3>
+                        <p className="text-[13px] text-[var(--text-muted)] mb-3">
+                          {progress.campusName} ({progress.current} of {progress.total})
+                        </p>
+                      </>
+                    )}
                     <div className="w-full h-2 bg-[var(--surface-subtle)] rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-[var(--brand-red)] transition-all duration-300"
-                        style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                        style={{ width: `${isUploadingToDrive ? (driveProgress.current / driveProgress.total) * 100 : (progress.current / progress.total) * 100}%` }}
                       />
                     </div>
                   </div>

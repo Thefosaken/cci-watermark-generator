@@ -277,7 +277,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
         batchResults.forEach(({ campus, pBlob, lBlob, dpBlob, dlBlob }) => {
           const campusFolder = zip.folder(campus.name);
-          const normalFolder = campusFolder?.folder('Normal');
+          const normalFolder = campusFolder?.folder('Service');
           const docFolder = campusFolder?.folder('Documentary');
           normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Portrait'), pBlob);
           normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Landscape'), lBlob);

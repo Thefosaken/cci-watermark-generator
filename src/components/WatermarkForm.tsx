@@ -33,6 +33,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -66,6 +67,19 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   useEffect(() => {
     loadGisScript();
   }, []);
+
+  // Allow the error modal to be dismissed with the Escape key.
+  useEffect(() => {
+    if (!error) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setError(null);
+        setShowErrorDetails(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [error]);
 
   // Reset the address field to the campus default whenever the campus or
   // service type changes. Adjusting state during render (React-recommended for
@@ -455,6 +469,15 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     }
   };
 
+  const dismissError = () => {
+    setError(null);
+    setShowErrorDetails(false);
+  };
+
+  // The first line of an error is its summary; any remaining lines are detail.
+  const [errorSummary, ...errorRestLines] = (error ?? '').split('\n');
+  const errorDetails = errorRestLines.join('\n').trim();
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       {/* Left Column: Form Controls */}
@@ -632,10 +655,6 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
             </div>
           )}
         </div>
-
-        {error && (
-          <div className="p-3 bg-[var(--danger-soft)] text-[var(--danger)] text-[13px] font-medium rounded-lg border border-[var(--danger)]/20 whitespace-pre-line leading-relaxed">{error}</div>
-        )}
 
         <div className="pt-2">
           <button
@@ -958,6 +977,53 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
           </div>
         )}
       </div>
+
+      {/* Error Modal */}
+      {error && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={dismissError}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="w-full max-w-[360px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-6 border border-[var(--border-strong)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-[var(--danger-soft)] flex items-center justify-center">
+              <svg className="w-5 h-5 text-[var(--danger)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3 className="text-[14px] font-semibold text-[var(--text)] text-center leading-relaxed">{errorSummary}</h3>
+
+            {errorDetails && (
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowErrorDetails((v) => !v)}
+                  className="block mx-auto text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                >
+                  {showErrorDetails ? 'Hide details' : 'Show details'}
+                </button>
+                {showErrorDetails && (
+                  <p className="mt-2 text-[12px] text-[var(--text-muted)] leading-relaxed whitespace-pre-line bg-[var(--surface-subtle)] rounded-[8px] p-3">
+                    {errorDetails}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={dismissError}
+              className="mt-5 w-full py-2.5 rounded-[8px] bg-[var(--brand-red)] text-white text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -338,10 +338,16 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
       setProgress({ current: 0, total: 0, campusName: 'Choose a destination folder...' });
 
-      const folderId = await showFolderPicker(
-        accessToken,
-        process.env.NEXT_PUBLIC_GOOGLE_API_KEY!
-      );
+      let folderId: string;
+      try {
+        folderId = await showFolderPicker(
+          accessToken,
+          process.env.NEXT_PUBLIC_GOOGLE_API_KEY!
+        );
+      } catch {
+        setError('Folder selection cancelled. Export aborted.');
+        return;
+      }
 
       setIsUploadingToDrive(true);
 
@@ -427,12 +433,9 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       }
     } catch (err) {
       let message = 'Google Drive export failed. Please try again.';
-      if (err instanceof Error) {
-        if (err.message.includes('access_denied')) message = 'Google sign-in was cancelled. Please try again.';
-        else message = err.message;
-      }
+      if (err instanceof Error) message = err.message;
       setError(message);
-      console.error(err);
+      console.error('Drive export error:', err);
     } finally {
       setIsGeneratingAll(false);
       setIsUploadingToDrive(false);

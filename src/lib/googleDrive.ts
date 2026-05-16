@@ -69,9 +69,9 @@ export function requestDriveToken(clientId: string): Promise<string> {
         if (resp.access_token) resolve(resp.access_token);
         else reject(new Error('No access token returned'));
       },
-      error_callback: (err) => reject(err),
+      error_callback: (err) => reject(new Error(err.message || 'Sign-in was cancelled or failed')),
     });
-    client.requestAccessToken();
+    client.requestAccessToken({ prompt: 'consent' });
   });
 }
 

@@ -568,36 +568,25 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         <div className="h-px w-full bg-[var(--border)]" />
 
         <div className="space-y-5">
-          {/* Organization Type Toggle */}
-          <div className="space-y-2">
-            <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Organization Type</label>
-            <div className="relative flex bg-[var(--surface-subtle)] rounded-full p-1 border border-[var(--border)]">
-              <div 
-                className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-[var(--surface-raised)] rounded-full transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] border border-[var(--border)]"
-                style={{ transform: `translateX(${organizationType === 'cellChurch' ? 100 : 0}%)` }}
-              />
-              <button
-                type="button"
-                onClick={() => handleOrganizationTypeChange('campus')}
-                className={`relative z-10 flex-1 py-2.5 text-[14px] font-medium transition-all duration-300 outline-none active:scale-[0.97] select-none ${
-                  organizationType === 'campus' ? 'text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                Campus
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOrganizationTypeChange('cellChurch')}
-                className={`relative z-10 flex-1 py-2.5 text-[14px] font-medium transition-all duration-300 outline-none active:scale-[0.97] select-none ${
-                  organizationType === 'cellChurch' ? 'text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                Cell Church
-              </button>
-            </div>
-          </div>
-
           <ServiceTypeSelector value={serviceType} onChange={setServiceType} organizationType={organizationType} />
+          
+          {/* Organization Type Switch */}
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Cell Church</span>
+            <button
+              type="button"
+              onClick={() => handleOrganizationTypeChange(organizationType === 'campus' ? 'cellChurch' : 'campus')}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                organizationType === 'cellChurch' ? 'bg-[var(--brand-red)]' : 'bg-[var(--border)]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  organizationType === 'cellChurch' ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
           
           <CampusSelector
             campuses={campuses}

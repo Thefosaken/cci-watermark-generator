@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useState, useRef, useEffect } from 'react';
 import { ServiceType, Campus, WatermarkPayload } from '@/types/watermark';
 import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
-import { createDriveFolder, uploadDriveFile, delay } from '@/lib/googleDrive';
+import { createDriveFolder, uploadDriveFile, delay, loadGisScript, isGisLoaded, requestDriveToken } from '@/lib/googleDrive';
 import { ChromePicker } from 'react-color';
 
 const PRESET_COLORS = [
@@ -44,17 +43,6 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   const [isUploadingToDrive, setIsUploadingToDrive] = useState(false);
   const [driveProgress, setDriveProgress] = useState({ current: 0, total: 0 });
 
-  interface DriveExportPending {
-    campuses: Campus[];
-    serviceType: ServiceType;
-    topic: string;
-    address: string;
-    eventLogo: string | null;
-    eventBgColor: string;
-    eventLogoScale: number;
-  }
-  const driveExportRef = useRef<DriveExportPending | null>(null);
-
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
   // Pre-generated blobs for instant downloads (populated during handleGenerate)
@@ -75,39 +63,9 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       });
   }, [logoUrl]);
 
-  const driveLogin = useGoogleLogin({
-    scope: 'https://www.googleapis.com/auth/drive.file',
-    onSuccess: async (tokenResponse) => {
-      const pending = driveExportRef.current;
-      if (!pending) return;
-      try {
-        await performDriveUpload(tokenResponse.access_token, pending);
-      } catch (err) {
-        setError('Google Drive upload failed. Please try again.');
-        console.error(err);
-      } finally {
-        driveExportRef.current = null;
-        setIsGeneratingAll(false);
-        setIsUploadingToDrive(false);
-        setShowDownloadMenu(false);
-      }
-    },
-    onError: () => {
-      setError('Google sign-in was cancelled or failed.');
-      setIsGeneratingAll(false);
-      setIsUploadingToDrive(false);
-      driveExportRef.current = null;
-    },
-  });
-
-  const getActiveDriveCampuses = useCallback(() => {
-    return campuses.filter((campus) => {
-      let addr = campus.address;
-      if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-      else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-      return campus.active && addr.trim();
-    });
-  }, [campuses, serviceType]);
+  useEffect(() => {
+    loadGisScript();
+  }, []);
 
   // Reset the address field to the campus default whenever the campus or
   // service type changes. Adjusting state during render (React-recommended for
@@ -350,98 +308,19 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     }
   };
 
-  const performDriveUpload = async (token: string, pending: DriveExportPending) => {
-    const BATCH_SIZE = 4;
-    const { topic: t, serviceType: st } = pending;
-
-    setIsUploadingToDrive(true);
-
-    const batchResults: Array<{ campus: Campus; pBlob: Blob; lBlob: Blob; dpBlob: Blob; dlBlob: Blob }> = [];
-
-    for (let i = 0; i < pending.campuses.length; i += BATCH_SIZE) {
-      const batch = pending.campuses.slice(i, i + BATCH_SIZE);
-      setProgress({ current: i + 1, total: pending.campuses.length, campusName: batch.map((c) => c.name).join(', ') });
-
-      const results = await Promise.all(
-        batch.map(async (campus) => {
-          let addr = campus.address;
-          if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-          else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-
-          const payload: WatermarkPayload = {
-            serviceType: st,
-            topic: t.trim(),
-            campusName: campus.name,
-            cityLabel: campus.cityLabel,
-            address: addr.trim(),
-            eventLogoUrl: pending.eventLogo || undefined,
-            eventBgColor: pending.eventBgColor,
-            eventLogoScale: pending.eventLogoScale,
-          };
-
-          const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
-            renderWatermark(payload, 'portrait', logoRef.current!, undefined),
-            renderWatermark(payload, 'landscape', logoRef.current!, undefined),
-            renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-            renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
-          ]);
-
-          const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
-            toBlob(portrait.canvas),
-            toBlob(landscape.canvas),
-            toBlob(docPortrait.canvas),
-            toBlob(docLandscape.canvas),
-          ]);
-
-          return { campus, pBlob, lBlob, dpBlob, dlBlob };
-        })
-      );
-
-      batchResults.push(...results);
-      setProgress({ current: i + batch.length, total: pending.campuses.length, campusName: batch[batch.length - 1].name });
-    }
-
-    // Create root folder
-    const date = new Date().toISOString().split('T')[0];
-    const topicSlug = t.trim().replace(/\s+/g, '-');
-    const rootFolderName = `CCI_${topicSlug}_Watermark_${date}`;
-
-    setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
-
-    const rootId = await createDriveFolder(token, rootFolderName);
-
-    const totalFiles = batchResults.length * 4;
-    let uploaded = 0;
-
-    for (const { campus, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
-      const campusId = await createDriveFolder(token, campus.name, rootId);
-      const [serviceId, docId] = await Promise.all([
-        createDriveFolder(token, 'Service', campusId),
-        createDriveFolder(token, 'Documentary', campusId),
-      ]);
-
-      await Promise.all([
-        uploadDriveFile(token, pBlob, generateFilename(campus.name, st, t.trim(), 'Portrait'), serviceId),
-        uploadDriveFile(token, lBlob, generateFilename(campus.name, st, t.trim(), 'Landscape'), serviceId),
-        uploadDriveFile(token, dpBlob, generateDocumentaryFilename(campus.name, st, t.trim(), 'Portrait'), docId),
-        uploadDriveFile(token, dlBlob, generateDocumentaryFilename(campus.name, st, t.trim(), 'Landscape'), docId),
-      ]);
-
-      uploaded += 4;
-      setDriveProgress({ current: uploaded, total: totalFiles });
-      setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
-
-      await delay(200);
-    }
-  };
-
   const handleDriveExportAll = async () => {
     if (!topic.trim()) {
       setError('Please enter a topic before exporting to Google Drive');
       return;
     }
 
-    const activeCampuses = getActiveDriveCampuses();
+    const activeCampuses = campuses.filter((campus) => {
+      let addr = campus.address;
+      if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+      else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+      return campus.active && addr.trim();
+    });
+
     if (activeCampuses.length === 0) {
       setError('No campuses with valid addresses found');
       return;
@@ -450,17 +329,108 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     setError(null);
     setIsGeneratingAll(true);
 
-    driveExportRef.current = {
-      campuses: activeCampuses,
-      serviceType,
-      topic: topic.trim(),
-      address: address.trim(),
-      eventLogo,
-      eventBgColor,
-      eventLogoScale,
-    };
+    try {
+      if (!isGisLoaded()) {
+        throw new Error('Google Identity Services not loaded. Please refresh the page.');
+      }
 
-    driveLogin();
+      const accessToken = await requestDriveToken(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!);
+
+      setIsUploadingToDrive(true);
+
+      const BATCH_SIZE = 4;
+      const t = topic.trim();
+      const st = serviceType;
+
+      const batchResults: Array<{ campus: Campus; pBlob: Blob; lBlob: Blob; dpBlob: Blob; dlBlob: Blob }> = [];
+
+      for (let i = 0; i < activeCampuses.length; i += BATCH_SIZE) {
+        const batch = activeCampuses.slice(i, i + BATCH_SIZE);
+        setProgress({ current: i + 1, total: activeCampuses.length, campusName: batch.map((c) => c.name).join(', ') });
+
+        const results = await Promise.all(
+          batch.map(async (campus) => {
+            let addr = campus.address;
+            if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+            else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+
+            const payload: WatermarkPayload = {
+              serviceType: st,
+              topic: t,
+              campusName: campus.name,
+              cityLabel: campus.cityLabel,
+              address: addr.trim(),
+              eventLogoUrl: eventLogo || undefined,
+              eventBgColor,
+              eventLogoScale,
+            };
+
+            const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+              renderWatermark(payload, 'portrait', logoRef.current!, undefined),
+              renderWatermark(payload, 'landscape', logoRef.current!, undefined),
+              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+            ]);
+
+            const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+              toBlob(portrait.canvas),
+              toBlob(landscape.canvas),
+              toBlob(docPortrait.canvas),
+              toBlob(docLandscape.canvas),
+            ]);
+
+            return { campus, pBlob, lBlob, dpBlob, dlBlob };
+          })
+        );
+
+        batchResults.push(...results);
+        setProgress({ current: i + batch.length, total: activeCampuses.length, campusName: batch[batch.length - 1].name });
+      }
+
+      const date = new Date().toISOString().split('T')[0];
+      const topicSlug = t.replace(/\s+/g, '-');
+      const rootFolderName = `CCI_${topicSlug}_Watermark_${date}`;
+
+      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
+
+      const rootId = await createDriveFolder(accessToken, rootFolderName);
+
+      const totalFiles = batchResults.length * 4;
+      let uploaded = 0;
+
+      for (const { campus, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
+        const campusId = await createDriveFolder(accessToken, campus.name, rootId);
+        const [serviceId, docId] = await Promise.all([
+          createDriveFolder(accessToken, 'Service', campusId),
+          createDriveFolder(accessToken, 'Documentary', campusId),
+        ]);
+
+        await Promise.all([
+          uploadDriveFile(accessToken, pBlob, generateFilename(campus.name, st, t, 'Portrait'), serviceId),
+          uploadDriveFile(accessToken, lBlob, generateFilename(campus.name, st, t, 'Landscape'), serviceId),
+          uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(campus.name, st, t, 'Portrait'), docId),
+          uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(campus.name, st, t, 'Landscape'), docId),
+        ]);
+
+        uploaded += 4;
+        setDriveProgress({ current: uploaded, total: totalFiles });
+        setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
+
+        await delay(200);
+      }
+    } catch (err) {
+      let message = 'Google Drive export failed. Please try again.';
+      if (err instanceof Error) {
+        if (err.message.includes('access_denied')) message = 'Google sign-in was cancelled. Please try again.';
+        else message = err.message;
+      }
+      setError(message);
+      console.error(err);
+    } finally {
+      setIsGeneratingAll(false);
+      setIsUploadingToDrive(false);
+      setShowDownloadMenu(false);
+    }
   };
 
   const handleEventLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

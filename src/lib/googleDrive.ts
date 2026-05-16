@@ -5,8 +5,8 @@ declare const google: {
         client_id: string;
         scope: string;
         callback: (response: { access_token?: string; expires_in?: number }) => void;
-      error_callback?: (error: { type: string; message: string }) => void;
-    }): { requestAccessToken: (hint: { prompt: string }) => void };
+        error_callback?: (error: { type: string; message: string }) => void;
+      }): { requestAccessToken: (hint?: { prompt?: string; hint?: string }) => void };
     };
   };
 };
@@ -16,36 +16,31 @@ const BASE_URL = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
-export async function requestDriveToken(clientId: string): Promise<string> {
-  await loadGis();
-  return new Promise((resolve, reject) => {
-    try {
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: SCOPE,
-        callback: (resp) => {
-          if (resp.access_token) resolve(resp.access_token);
-          else reject(new Error('No access token returned'));
-        },
-        error_callback: (err) => reject(err),
-      });
-      client.requestAccessToken({ prompt: '' });
-    } catch (err) {
-      reject(err);
-    }
-  });
+export function loadGisScript(): void {
+  if (typeof document === 'undefined') return;
+  if (document.querySelector('script[src="https://accounts.google.com/gsi/client"]')) return;
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true;
+  document.head.appendChild(s);
 }
 
-function loadGis(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof google !== 'undefined' && google.accounts) {
-      resolve();
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.onload = () => resolve();
-    document.head.appendChild(s);
+export function isGisLoaded(): boolean {
+  return typeof google !== 'undefined' && !!google.accounts;
+}
+
+export function requestDriveToken(clientId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPE,
+      callback: (resp) => {
+        if (resp.access_token) resolve(resp.access_token);
+        else reject(new Error('No access token returned'));
+      },
+      error_callback: (err) => reject(err),
+    });
+    client.requestAccessToken();
   });
 }
 

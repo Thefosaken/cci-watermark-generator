@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
     "@types/react-color": "^3.0.13",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",

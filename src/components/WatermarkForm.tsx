@@ -924,12 +924,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                         disabled={!topic.trim()}
                         className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="19.04 8.94 18.07 6.98 16.06 5.14 13.53 4.2 10.81 4.27 8.39 5.42 6.65 7.47 5.74 9.49 5.59 11.57 6.56 14.58 8.56 16.73 11.07 17.83 13.62 17.63 16.06 16.33 17.82 14.21 18.78 11.85 18.74 9.67"></polygon>
-                            <polygon points="12.2 6.99 12.2 12.01 15.58 13.69"></polygon>
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                          </svg>
+                        <div className="w-[18px] h-[18px] flex items-center justify-center">
+                          <img src="/google-drive-logo.svg" alt="Google Drive" className="w-full h-full" />
                         </div>
                         <div>
                           <div className="font-medium text-[13px] text-[var(--text)]">All Campuses (Google Drive)</div>

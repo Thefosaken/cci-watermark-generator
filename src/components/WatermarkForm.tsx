@@ -6,7 +6,7 @@ import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
-import { createDriveFolder, uploadDriveFile, delay, loadGisScript, isGisLoaded, requestDriveToken } from '@/lib/googleDrive';
+import { createDriveFolder, uploadDriveFile, delay, loadGisScript, isGisLoaded, requestDriveToken, showFolderPicker } from '@/lib/googleDrive';
 import { ChromePicker } from 'react-color';
 
 const PRESET_COLORS = [
@@ -336,6 +336,13 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
       const accessToken = await requestDriveToken(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!);
 
+      setProgress({ current: 0, total: 0, campusName: 'Choose a destination folder...' });
+
+      const folderId = await showFolderPicker(
+        accessToken,
+        process.env.NEXT_PUBLIC_GOOGLE_API_KEY!
+      );
+
       setIsUploadingToDrive(true);
 
       const BATCH_SIZE = 4;
@@ -393,7 +400,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
       setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
 
-      const rootId = await createDriveFolder(accessToken, rootFolderName);
+      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
 
       const totalFiles = batchResults.length * 4;
       let uploaded = 0;

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "makurdi",
+    "name": "Makurdi",
+    "cityLabel": "MAKURDI",
+    "address": "Makurdi Cell Church, Benue, Nigeria",
+    "active": true
+  },
+  {
+    "id": "jos",
+    "name": "Jos",
+    "cityLabel": "JOS",
+    "address": "Jos Cell Church, Plateau, Nigeria",
+    "active": true
+  },
+  {
+    "id": "aba",
+    "name": "Aba",
+    "cityLabel": "ABA",
+    "address": "Aba Cell Church, Abia, Nigeria",
+    "active": true
+  }
+]

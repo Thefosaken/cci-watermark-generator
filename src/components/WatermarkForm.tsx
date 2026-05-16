@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ServiceType, Campus, WatermarkPayload } from '@/types/watermark';
+import { ServiceType, Campus, CellChurch, WatermarkPayload, OrganizationType } from '@/types/watermark';
 import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
@@ -16,12 +16,14 @@ const PRESET_COLORS = [
 
 interface WatermarkFormProps {
   campuses: Campus[];
+  cellChurches: CellChurch[];
   logoUrl: string;
 }
 
-export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
+export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkFormProps) {
+  const [organizationType, setOrganizationType] = useState<OrganizationType>('campus');
   const [serviceType, setServiceType] = useState<ServiceType>('sunday');
-  const [selectedCampus, setSelectedCampus] = useState<Campus | null>(null);
+  const [selectedCampus, setSelectedCampus] = useState<Campus | CellChurch | null>(null);
   const [topic, setTopic] = useState('');
   const [address, setAddress] = useState('');
   const [eventLogo, setEventLogo] = useState<string | null>(null);
@@ -84,21 +86,31 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
   // Reset the address field to the campus default whenever the campus or
   // service type changes. Adjusting state during render (React-recommended for
   // prop-derived state) avoids the extra cascading render an effect would cause.
-  const addressKey = selectedCampus ? `${selectedCampus.id}|${serviceType}` : '';
+  const addressKey = selectedCampus ? `${selectedCampus.id}|${serviceType}|${organizationType}` : '';
   if (addressKey !== lastAddressKey) {
     setLastAddressKey(addressKey);
     if (selectedCampus) {
       let addr = selectedCampus.address;
-      if (serviceType === 'midweek' && selectedCampus.midweekAddress) {
-        addr = selectedCampus.midweekAddress;
-      } else if (serviceType === 'sunday' && selectedCampus.sundayAddress) {
-        addr = selectedCampus.sundayAddress;
+      if (organizationType === 'campus') {
+        const campus = selectedCampus as Campus;
+        if (serviceType === 'midweek' && campus.midweekAddress) {
+          addr = campus.midweekAddress;
+        } else if (serviceType === 'sunday' && campus.sundayAddress) {
+          addr = campus.sundayAddress;
+        }
       }
       setAddress(addr);
     }
   }
 
+  const handleOrganizationTypeChange = (newType: OrganizationType) => {
+    setSelectedCampus(null);
+    setAddress('');
+    setOrganizationType(newType);
+  };
+
   const canGenerate = selectedCampus && topic.trim() && logoLoaded;
+  const showDocumentary = organizationType === 'campus';
 
   const handleGenerate = async () => {
     if (!selectedCampus || !topic.trim()) {
@@ -123,6 +135,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         eventLogoUrl: eventLogo || undefined,
         eventBgColor,
         eventLogoScale,
+        isCellChurch: organizationType === 'cellChurch',
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -131,30 +144,52 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         eventLogoRef.current = evtImg;
       }
 
-      const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+      const [portrait, landscape] = await Promise.all([
         renderWatermark(payload, 'portrait', logoRef.current, evtImg),
         renderWatermark(payload, 'landscape', logoRef.current, evtImg),
-        renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
-        renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
       ]);
 
       setPortraitPreview(portrait.url);
       setLandscapePreview(landscape.url);
-      setDocPortraitPreview(docPortrait.url);
-      setDocLandscapePreview(docLandscape.url);
+
+      // Only generate documentary watermarks for campuses
+      if (organizationType === 'campus') {
+        const [docPortrait, docLandscape] = await Promise.all([
+          renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
+          renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
+        ]);
+        setDocPortraitPreview(docPortrait.url);
+        setDocLandscapePreview(docLandscape.url);
+      } else {
+        setDocPortraitPreview(null);
+        setDocLandscapePreview(null);
+      }
       // Pre-generate blobs now so all individual downloads are instant
       const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
         new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'));
-      const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+      const [pBlob, lBlob] = await Promise.all([
         toBlob(portrait.canvas),
         toBlob(landscape.canvas),
-        toBlob(docPortrait.canvas),
-        toBlob(docLandscape.canvas),
       ]);
       portraitBlobRef.current = pBlob;
       landscapeBlobRef.current = lBlob;
-      docPortraitBlobRef.current = dpBlob;
-      docLandscapeBlobRef.current = dlBlob;
+
+      // Only generate documentary blobs for campuses
+      if (organizationType === 'campus') {
+        const [docPortrait, docLandscape] = await Promise.all([
+          renderDocumentaryWatermark(payload, 'portrait', logoRef.current),
+          renderDocumentaryWatermark(payload, 'landscape', logoRef.current),
+        ]);
+        const [dpBlob, dlBlob] = await Promise.all([
+          toBlob(docPortrait.canvas),
+          toBlob(docLandscape.canvas),
+        ]);
+        docPortraitBlobRef.current = dpBlob;
+        docLandscapeBlobRef.current = dlBlob;
+      } else {
+        docPortraitBlobRef.current = null;
+        docLandscapeBlobRef.current = null;
+      }
     } catch (err) {
       setError('Failed to generate watermark. Please try again.');
       console.error(err);
@@ -223,28 +258,31 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
   const handleDownloadAllCampuses = async () => {
     if (!topic.trim()) {
-      setError('Please enter a topic before downloading all campuses');
+      setError(`Please enter a topic before downloading all ${organizationType === 'cellChurch' ? 'cell churches' : 'campuses'}`);
       return;
     }
 
-    const activeCampuses = campuses.filter((campus) => {
-      let addr = campus.address;
-      if (serviceType === 'midweek' && campus.midweekAddress) {
-        addr = campus.midweekAddress;
-      } else if (serviceType === 'sunday' && campus.sundayAddress) {
-        addr = campus.sundayAddress;
-      }
-      return campus.active && addr.trim();
-    });
+    const isCellChurch = organizationType === 'cellChurch';
+    const activeOrganizations = isCellChurch
+      ? cellChurches.filter((cc) => cc.active && cc.address.trim())
+      : campuses.filter((campus) => {
+          let addr = campus.address;
+          if (serviceType === 'midweek' && campus.midweekAddress) {
+            addr = campus.midweekAddress;
+          } else if (serviceType === 'sunday' && campus.sundayAddress) {
+            addr = campus.sundayAddress;
+          }
+          return campus.active && addr.trim();
+        });
 
-    if (activeCampuses.length === 0) {
-      setError('No campuses with valid addresses found');
+    if (activeOrganizations.length === 0) {
+      setError(`No ${isCellChurch ? 'cell churches' : 'campuses'} with valid addresses found`);
       return;
     }
 
     setError(null);
     setIsGeneratingAll(true);
-    setProgress({ current: 0, total: activeCampuses.length, campusName: '' });
+    setProgress({ current: 0, total: activeOrganizations.length, campusName: '' });
 
     try {
       if (!logoRef.current) {
@@ -255,64 +293,83 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
-      // Batch parallel rendering — process BATCH_SIZE campuses simultaneously
       const BATCH_SIZE = 4;
-      for (let i = 0; i < activeCampuses.length; i += BATCH_SIZE) {
-        const batch = activeCampuses.slice(i, Math.min(i + BATCH_SIZE, activeCampuses.length));
-        setProgress({ current: i + 1, total: activeCampuses.length, campusName: batch.map((c) => c.name).join(', ') });
+      for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
+        const batch = activeOrganizations.slice(i, Math.min(i + BATCH_SIZE, activeOrganizations.length));
+        setProgress({ current: i + 1, total: activeOrganizations.length, campusName: batch.map((c) => c.name).join(', ') });
 
         const batchResults = await Promise.all(
-          batch.map(async (campus) => {
-            let addr = campus.address;
-            if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-            else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+          batch.map(async (org) => {
+            let addr = org.address;
+            if (!isCellChurch) {
+              const campus = org as Campus;
+              if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+              else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+            }
 
             const payload: WatermarkPayload = {
               serviceType,
               topic: topic.trim(),
-              campusName: campus.name,
-              cityLabel: campus.cityLabel,
+              campusName: org.name,
+              cityLabel: org.cityLabel,
               address: addr.trim(),
               eventLogoUrl: eventLogo || undefined,
               eventBgColor,
               eventLogoScale,
+              isCellChurch,
             };
 
-            const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+            const [portrait, landscape] = await Promise.all([
               renderWatermark(payload, 'portrait', logoRef.current!, undefined),
               renderWatermark(payload, 'landscape', logoRef.current!, undefined),
-              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
             ]);
 
-            const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+            const [pBlob, lBlob] = await Promise.all([
               toBlob(portrait.canvas),
               toBlob(landscape.canvas),
-              toBlob(docPortrait.canvas),
-              toBlob(docLandscape.canvas),
             ]);
 
-            return { campus, pBlob, lBlob, dpBlob, dlBlob };
+            let dpBlob: Blob | null = null;
+            let dlBlob: Blob | null = null;
+
+            if (!isCellChurch) {
+              const [docPortrait, docLandscape] = await Promise.all([
+                renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+                renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+              ]);
+              const [dp, dl] = await Promise.all([
+                toBlob(docPortrait.canvas),
+                toBlob(docLandscape.canvas),
+              ]);
+              dpBlob = dp;
+              dlBlob = dl;
+            }
+
+            return { org, pBlob, lBlob, dpBlob, dlBlob };
           })
         );
 
-        batchResults.forEach(({ campus, pBlob, lBlob, dpBlob, dlBlob }) => {
-          const campusFolder = zip.folder(campus.name);
-          const normalFolder = campusFolder?.folder('Service');
-          const docFolder = campusFolder?.folder('Documentary');
-          normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Portrait'), pBlob);
-          normalFolder?.file(generateFilename(campus.name, serviceType, topic.trim(), 'Landscape'), lBlob);
-          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Portrait'), dpBlob);
-          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, topic.trim(), 'Landscape'), dlBlob);
+        batchResults.forEach(({ org, pBlob, lBlob, dpBlob, dlBlob }) => {
+          const orgFolder = zip.folder(org.name);
+          const normalFolder = orgFolder?.folder('Service');
+          normalFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Portrait'), pBlob);
+          normalFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Landscape'), lBlob);
+          
+          if (dpBlob && dlBlob) {
+            const docFolder = orgFolder?.folder('Documentary');
+            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Portrait'), dpBlob);
+            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Landscape'), dlBlob);
+          }
         });
 
-        setProgress({ current: i + batch.length, total: activeCampuses.length, campusName: batch[batch.length - 1].name });
+        setProgress({ current: i + batch.length, total: activeOrganizations.length, campusName: batch[batch.length - 1].name });
       }
 
       const content = await zip.generateAsync({ type: 'blob' });
       const date = new Date().toISOString().split('T')[0];
       const topicSlug = topic.trim().replace(/\s+/g, '-');
-      saveAs(content, `CCI_${topicSlug}_Watermark_${date}.zip`);
+      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
+      saveAs(content, `CCI_${orgSlug}_${topicSlug}_Watermark_${date}.zip`);
     } catch (err) {
       setError('Failed to generate all watermarks. Please try again.');
       console.error(err);
@@ -328,15 +385,18 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       return;
     }
 
-    const activeCampuses = campuses.filter((campus) => {
-      let addr = campus.address;
-      if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-      else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-      return campus.active && addr.trim();
-    });
+    const isCellChurch = organizationType === 'cellChurch';
+    const activeOrganizations = isCellChurch
+      ? cellChurches.filter((cc) => cc.active && cc.address.trim())
+      : campuses.filter((campus) => {
+          let addr = campus.address;
+          if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+          else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+          return campus.active && addr.trim();
+        });
 
-    if (activeCampuses.length === 0) {
-      setError('No campuses with valid addresses found');
+    if (activeOrganizations.length === 0) {
+      setError(`No ${isCellChurch ? 'cell churches' : 'campuses'} with valid addresses found`);
       return;
     }
 
@@ -344,8 +404,6 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     setIsGeneratingAll(true);
 
     try {
-      // Fail fast with a clear message if the Google credentials are missing
-      // from this build (they are baked in at build time on Vercel).
       const { clientId, apiKey } = getGoogleConfig();
 
       const accessToken = await requestDriveToken(clientId);
@@ -356,8 +414,6 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       try {
         folderId = await showFolderPicker(accessToken, apiKey);
       } catch (err) {
-        // A deliberate cancel is a soft abort; anything else is a real failure
-        // and keeps its explanatory message.
         if (err instanceof DriveError && err.userCancelled) {
           setError('Folder selection cancelled — export aborted.');
         } else {
@@ -372,79 +428,101 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
       const t = topic.trim();
       const st = serviceType;
 
-      const batchResults: Array<{ campus: Campus; pBlob: Blob; lBlob: Blob; dpBlob: Blob; dlBlob: Blob }> = [];
+      const batchResults: Array<{ org: Campus | CellChurch; pBlob: Blob; lBlob: Blob; dpBlob: Blob | null; dlBlob: Blob | null }> = [];
 
-      for (let i = 0; i < activeCampuses.length; i += BATCH_SIZE) {
-        const batch = activeCampuses.slice(i, i + BATCH_SIZE);
-        setProgress({ current: i + 1, total: activeCampuses.length, campusName: batch.map((c) => c.name).join(', ') });
+      for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
+        const batch = activeOrganizations.slice(i, i + BATCH_SIZE);
+        setProgress({ current: i + 1, total: activeOrganizations.length, campusName: batch.map((c) => c.name).join(', ') });
 
         const results = await Promise.all(
-          batch.map(async (campus) => {
-            let addr = campus.address;
-            if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-            else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+          batch.map(async (org) => {
+            let addr = org.address;
+            if (!isCellChurch) {
+              const campus = org as Campus;
+              if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
+              else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
+            }
 
             const payload: WatermarkPayload = {
               serviceType: st,
               topic: t,
-              campusName: campus.name,
-              cityLabel: campus.cityLabel,
+              campusName: org.name,
+              cityLabel: org.cityLabel,
               address: addr.trim(),
               eventLogoUrl: eventLogo || undefined,
               eventBgColor,
               eventLogoScale,
+              isCellChurch,
             };
 
-            const [portrait, landscape, docPortrait, docLandscape] = await Promise.all([
+            const [portrait, landscape] = await Promise.all([
               renderWatermark(payload, 'portrait', logoRef.current!, undefined),
               renderWatermark(payload, 'landscape', logoRef.current!, undefined),
-              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
             ]);
 
-            const [pBlob, lBlob, dpBlob, dlBlob] = await Promise.all([
+            const [pBlob, lBlob] = await Promise.all([
               toBlob(portrait.canvas),
               toBlob(landscape.canvas),
-              toBlob(docPortrait.canvas),
-              toBlob(docLandscape.canvas),
             ]);
 
-            return { campus, pBlob, lBlob, dpBlob, dlBlob };
+            let dpBlob: Blob | null = null;
+            let dlBlob: Blob | null = null;
+
+            if (!isCellChurch) {
+              const [docPortrait, docLandscape] = await Promise.all([
+                renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+                renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+              ]);
+              const [dp, dl] = await Promise.all([
+                toBlob(docPortrait.canvas),
+                toBlob(docLandscape.canvas),
+              ]);
+              dpBlob = dp;
+              dlBlob = dl;
+            }
+
+            return { org, pBlob, lBlob, dpBlob, dlBlob };
           })
         );
 
         batchResults.push(...results);
-        setProgress({ current: i + batch.length, total: activeCampuses.length, campusName: batch[batch.length - 1].name });
+        setProgress({ current: i + batch.length, total: activeOrganizations.length, campusName: batch[batch.length - 1].name });
       }
 
       const date = new Date().toISOString().split('T')[0];
       const topicSlug = t.replace(/\s+/g, '-');
-      const rootFolderName = `CCI_${topicSlug}_Watermark_${date}`;
+      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
+      const rootFolderName = `CCI_${orgSlug}_${topicSlug}_Watermark_${date}`;
 
       setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
 
       const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
 
-      const totalFiles = batchResults.length * 4;
+      const totalFiles = batchResults.reduce((acc, { dpBlob, dlBlob }) => acc + (dpBlob && dlBlob ? 4 : 2), 0);
       let uploaded = 0;
 
-      for (const { campus, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
-        const campusId = await createDriveFolder(accessToken, campus.name, rootId);
-        const [serviceId, docId] = await Promise.all([
-          createDriveFolder(accessToken, 'Service', campusId),
-          createDriveFolder(accessToken, 'Documentary', campusId),
-        ]);
+      for (const { org, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
+        const orgId = await createDriveFolder(accessToken, org.name, rootId);
+        const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
 
         await Promise.all([
-          uploadDriveFile(accessToken, pBlob, generateFilename(campus.name, st, t, 'Portrait'), serviceId),
-          uploadDriveFile(accessToken, lBlob, generateFilename(campus.name, st, t, 'Landscape'), serviceId),
-          uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(campus.name, st, t, 'Portrait'), docId),
-          uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(campus.name, st, t, 'Landscape'), docId),
+          uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId),
+          uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId),
         ]);
 
-        uploaded += 4;
+        uploaded += 2;
+
+        if (dpBlob && dlBlob) {
+          const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
+          await Promise.all([
+            uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId),
+            uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId),
+          ]);
+          uploaded += 2;
+        }
+
         setDriveProgress({ current: uploaded, total: totalFiles });
-        setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
+        setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
 
         await delay(200);
       }
@@ -490,12 +568,43 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         <div className="h-px w-full bg-[var(--border)]" />
 
         <div className="space-y-5">
-          <ServiceTypeSelector value={serviceType} onChange={setServiceType} />
+          {/* Organization Type Toggle */}
+          <div className="space-y-2">
+            <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Organization Type</label>
+            <div className="relative flex bg-[var(--surface-subtle)] rounded-full p-1 border border-[var(--border)]">
+              <div 
+                className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-[var(--surface-raised)] rounded-full transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] border border-[var(--border)]"
+                style={{ transform: `translateX(${organizationType === 'cellChurch' ? 100 : 0}%)` }}
+              />
+              <button
+                type="button"
+                onClick={() => handleOrganizationTypeChange('campus')}
+                className={`relative z-10 flex-1 py-2.5 text-[14px] font-medium transition-all duration-300 outline-none active:scale-[0.97] select-none ${
+                  organizationType === 'campus' ? 'text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                }`}
+              >
+                Campus
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOrganizationTypeChange('cellChurch')}
+                className={`relative z-10 flex-1 py-2.5 text-[14px] font-medium transition-all duration-300 outline-none active:scale-[0.97] select-none ${
+                  organizationType === 'cellChurch' ? 'text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                }`}
+              >
+                Cell Church
+              </button>
+            </div>
+          </div>
+
+          <ServiceTypeSelector value={serviceType} onChange={setServiceType} organizationType={organizationType} />
           
           <CampusSelector
             campuses={campuses}
+            cellChurches={cellChurches}
             value={selectedCampus}
             serviceType={serviceType}
+            organizationType={organizationType}
             onChange={setSelectedCampus}
           />
 
@@ -883,25 +992,27 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
 
                       <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
 
-                      <button
-                        onClick={() => { handleDownloadDocumentary(); setShowDownloadMenu(false); }}
-                        disabled={!docPortraitPreview || !docLandscapePreview}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">Documentary Only</div>
-                          <div className="text-[12px] text-[var(--text-muted)]">Transparent overlay PNGs</div>
-                        </div>
-                      </button>
+                      {showDocumentary && (
+                        <button
+                          onClick={() => { handleDownloadDocumentary(); setShowDownloadMenu(false); }}
+                          disabled={!docPortraitPreview || !docLandscapePreview}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="text-[var(--text-faint)] group-hover:text-[var(--text)] transition-colors">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="8" x2="12" y2="16"></line>
+                              <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="font-medium text-[13px] text-[var(--text)]">Documentary Only</div>
+                            <div className="text-[12px] text-[var(--text-muted)]">Transparent overlay PNGs</div>
+                          </div>
+                        </button>
+                      )}
 
-                      <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
+                      {showDocumentary && <div className="h-px bg-[var(--border)] mx-3 my-1"></div>}
 
                       <button
                         onClick={() => { handleDownloadAllCampuses(); }}
@@ -914,8 +1025,8 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">All Campuses (ZIP)</div>
-                          <div className="text-[12px] text-[var(--text-muted)]">Download for all {campuses.filter((c) => c.active).length} campuses</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">All {organizationType === 'cellChurch' ? 'Cell Churches' : 'Campuses'} (ZIP)</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">Download for all {organizationType === 'cellChurch' ? cellChurches.filter((c) => c.active).length : campuses.filter((c) => c.active).length} {organizationType === 'cellChurch' ? 'cell churches' : 'campuses'}</div>
                         </div>
                       </button>
 

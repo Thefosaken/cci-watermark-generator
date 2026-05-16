@@ -1,5 +1,7 @@
 export type ServiceType = 'midweek' | 'sunday' | 'event';
 
+export type OrganizationType = 'campus' | 'cellChurch';
+
 export interface Campus {
   id: string;
   name: string;
@@ -12,6 +14,14 @@ export interface Campus {
   active: boolean;
 }
 
+export interface CellChurch {
+  id: string;
+  name: string;
+  cityLabel: string;
+  address: string;
+  active: boolean;
+}
+
 export interface WatermarkPayload {
   serviceType: ServiceType;
   topic: string;
@@ -21,6 +31,7 @@ export interface WatermarkPayload {
   eventLogoUrl?: string;
   eventBgColor?: string;
   eventLogoScale?: number;
+  isCellChurch?: boolean;
 }
 
 export interface WatermarkRenderResult {

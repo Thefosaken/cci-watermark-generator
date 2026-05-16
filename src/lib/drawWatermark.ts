@@ -46,7 +46,7 @@ export async function renderWatermark(
   ctx.clearRect(0, 0, layout.width, layout.height);
 
   drawBottomBar(ctx, layout);
-  drawCentralTile(ctx, layout, payload.cityLabel, logoImage);
+  drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch);
   drawServiceText(ctx, layout, payload.serviceType, payload.topic);
   drawAddressText(ctx, layout, payload.address);
 
@@ -72,7 +72,8 @@ function drawCentralTile(
   ctx: CanvasRenderingContext2D,
   layout: LayoutConfig,
   cityLabel: string,
-  logoImage: HTMLImageElement
+  logoImage: HTMLImageElement,
+  isCellChurch?: boolean
 ): void {
   ctx.fillStyle = DESIGN_TOKENS.colors.tileRed;
   ctx.fillRect(layout.tileX, layout.tileY, layout.tileWidth, layout.tileVisibleHeight);
@@ -80,25 +81,37 @@ function drawCentralTile(
   const tileCenterX = layout.tileX + layout.tileWidth / 2;
   const tileCenterY = layout.tileY + layout.tileVisibleHeight / 2;
 
-  ctx.font = `${DESIGN_TOKENS.typography.cityWeight} ${layout.cityFontSize}px Lato, sans-serif`;
-  const cityText = cityLabel.toUpperCase();
-  const cityMetrics = ctx.measureText(cityText);
-  const cityTextHeight = layout.cityFontSize;
+  let logoY: number;
+  let logoX: number;
 
-  const totalContentHeight = layout.logoHeight + layout.logoToCityGap + cityTextHeight;
-  const contentStartY = tileCenterY - totalContentHeight / 2;
+  if (isCellChurch) {
+    logoY = tileCenterY - layout.logoHeight / 2;
+    logoX = tileCenterX - layout.logoWidth / 2;
+  } else {
+    ctx.font = `${DESIGN_TOKENS.typography.cityWeight} ${layout.cityFontSize}px Lato, sans-serif`;
+    const cityText = cityLabel.toUpperCase();
+    const cityTextHeight = layout.cityFontSize;
 
-  const logoY = contentStartY;
-  const logoX = tileCenterX - layout.logoWidth / 2;
+    const totalContentHeight = layout.logoHeight + layout.logoToCityGap + cityTextHeight;
+    const contentStartY = tileCenterY - totalContentHeight / 2;
+
+    logoY = contentStartY;
+    logoX = tileCenterX - layout.logoWidth / 2;
+
+    if (logoImage) {
+      ctx.drawImage(logoImage, logoX, logoY, layout.logoWidth, layout.logoHeight);
+    }
+
+    ctx.fillStyle = DESIGN_TOKENS.colors.cityYellow;
+    ctx.textAlign = 'center';
+    const cityY = logoY + layout.logoHeight + layout.logoToCityGap + cityTextHeight * 0.85;
+    ctx.fillText(cityText, tileCenterX, cityY);
+    return;
+  }
   
   if (logoImage) {
     ctx.drawImage(logoImage, logoX, logoY, layout.logoWidth, layout.logoHeight);
   }
-
-  ctx.fillStyle = DESIGN_TOKENS.colors.cityYellow;
-  ctx.textAlign = 'center';
-  const cityY = logoY + layout.logoHeight + layout.logoToCityGap + cityTextHeight * 0.85;
-  ctx.fillText(cityText, tileCenterX, cityY);
 }
 
 function drawServiceText(

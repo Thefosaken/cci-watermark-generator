@@ -6,7 +6,7 @@ import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
-import { createDriveFolder, uploadDriveFile, delay, loadGisScript, isGisLoaded, requestDriveToken, showFolderPicker } from '@/lib/googleDrive';
+import { createDriveFolder, uploadDriveFile, delay, loadGisScript, requestDriveToken, showFolderPicker, getGoogleConfig, DriveError } from '@/lib/googleDrive';
 import { ChromePicker } from 'react-color';
 
 const PRESET_COLORS = [
@@ -330,22 +330,25 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
     setIsGeneratingAll(true);
 
     try {
-      if (!isGisLoaded()) {
-        throw new Error('Google Identity Services not loaded. Please refresh the page.');
-      }
+      // Fail fast with a clear message if the Google credentials are missing
+      // from this build (they are baked in at build time on Vercel).
+      const { clientId, apiKey } = getGoogleConfig();
 
-      const accessToken = await requestDriveToken(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!);
+      const accessToken = await requestDriveToken(clientId);
 
       setProgress({ current: 0, total: 0, campusName: 'Choose a destination folder...' });
 
       let folderId: string;
       try {
-        folderId = await showFolderPicker(
-          accessToken,
-          process.env.NEXT_PUBLIC_GOOGLE_API_KEY!
-        );
-      } catch {
-        setError('Folder selection cancelled. Export aborted.');
+        folderId = await showFolderPicker(accessToken, apiKey);
+      } catch (err) {
+        // A deliberate cancel is a soft abort; anything else is a real failure
+        // and keeps its explanatory message.
+        if (err instanceof DriveError && err.userCancelled) {
+          setError('Folder selection cancelled — export aborted.');
+        } else {
+          setError(err instanceof Error ? err.message : 'Could not open the Drive folder picker.');
+        }
         return;
       }
 
@@ -631,7 +634,7 @@ export function WatermarkForm({ campuses, logoUrl }: WatermarkFormProps) {
         </div>
 
         {error && (
-          <div className="p-3 bg-[var(--danger-soft)] text-[var(--danger)] text-[13px] font-medium rounded-lg border border-[var(--danger)]/20">{error}</div>
+          <div className="p-3 bg-[var(--danger-soft)] text-[var(--danger)] text-[13px] font-medium rounded-lg border border-[var(--danger)]/20 whitespace-pre-line leading-relaxed">{error}</div>
         )}
 
         <div className="pt-2">

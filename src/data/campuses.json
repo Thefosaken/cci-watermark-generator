@@ -55,6 +55,17 @@
     "active": true
   },
   {
+    "id": "abuja",
+    "name": "Abuja",
+    "cityLabel": "ABUJA",
+    "address": "Celebr8 Centre, Eden Parks & Gardens",
+    "sundayAddress": "Celebr8 Centre, Eden Parks & Gardens",
+    "midweekAddress": "Celebr8 Centre, Eden Parks & Gardens",
+    "country": "Nigeria",
+    "region": "FCT",
+    "active": true
+  },
+  {
     "id": "amsterdam",
     "name": "Amsterdam",
     "cityLabel": "AMSTERDAM",
@@ -514,6 +525,17 @@
     "midweekAddress": "499 Preston Street, Ontario",
     "country": "Canada",
     "region": "Ontario",
+    "active": true
+  },
+  {
+    "id": "portharcourt",
+    "name": "Portharcourt",
+    "cityLabel": "PORTHARCOURT",
+    "address": "Celebr8 Centre, Olu Obasanjo Road",
+    "sundayAddress": "Celebr8 Centre, Olu Obasanjo Road",
+    "midweekAddress": "Celebr8 Centre, Olu Obasanjo Road",
+    "country": "Nigeria",
+    "region": "Rivers",
     "active": true
   },
   {

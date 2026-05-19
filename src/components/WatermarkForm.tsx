@@ -114,6 +114,11 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     setSelectedCampus(null);
     setAddress('');
     setOrganizationType(newType);
+    // Cell Church has no "Special Event" service type — fall back to a valid
+    // one so the ServiceTypeSelector pill doesn't slide off (selectedIndex -1).
+    if (newType === 'cellChurch' && serviceType === 'event') {
+      setServiceType('sunday');
+    }
   };
 
   const canGenerate = selectedCampus && topic.trim() && logoLoaded;
@@ -1344,9 +1349,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           return (
                             <div
                               key={org.id}
-                              className={`px-4 py-2 transition-colors ${
-                                checked ? 'bg-[var(--brand-red)]/5' : 'hover:bg-[var(--surface-subtle)]'
-                              }`}
+                              className="px-4 py-2 transition-colors hover:bg-[var(--surface-subtle)]"
                             >
                               <div
                                 className="flex items-center gap-3 cursor-pointer py-0.5"

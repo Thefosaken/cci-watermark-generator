@@ -21,7 +21,9 @@ const cellChurchServiceTypes: { value: ServiceType; label: string }[] = [
 
 export function ServiceTypeSelector({ value, onChange, organizationType }: ServiceTypeSelectorProps) {
   const serviceTypes = organizationType === 'cellChurch' ? cellChurchServiceTypes : campusServiceTypes;
-  const selectedIndex = serviceTypes.findIndex((t) => t.value === value);
+  // Clamp to 0 so the sliding pill never flies off-screen when `value` isn't in
+  // the current list (e.g. 'event' selected while switching to Cell Church).
+  const selectedIndex = Math.max(0, serviceTypes.findIndex((t) => t.value === value));
   
   const activeServiceTypes = organizationType === 'cellChurch' ? cellChurchServiceTypes : campusServiceTypes;
   const pillWidth = 100 / activeServiceTypes.length;

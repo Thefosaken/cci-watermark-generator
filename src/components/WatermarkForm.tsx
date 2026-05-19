@@ -573,7 +573,13 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const openMultiSelect = (mode: 'zip' | 'drive') => {
     const all: (Campus | CellChurch)[] = organizationType === 'cellChurch' ? cellChurches : campuses;
     const eligible = all.filter((o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '');
-    setSelectedCampusIds(new Set(eligible.map((o) => o.id)));
+    // A midweek campus export defaults to the campuses that run midweek
+    // services; every other export defaults to all eligible organisations.
+    const preselect =
+      organizationType === 'campus' && serviceType === 'midweek'
+        ? eligible.filter((o) => (o as Campus).hasMidweek)
+        : eligible;
+    setSelectedCampusIds(new Set(preselect.map((o) => o.id)));
     setAddressOverrides({});
     setMultiSelectSearch('');
     setShowMultiSelectModal(mode);
@@ -593,11 +599,20 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const allOrgs = multiSelectSource.filter(
     (o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '',
   );
-  const filteredOrgs = allOrgs.filter(
-    (o) =>
-      o.name.toLowerCase().includes(multiSelectSearch.toLowerCase()) ||
-      o.cityLabel.toLowerCase().includes(multiSelectSearch.toLowerCase()),
-  );
+  // A midweek campus export lists only the curated midweek campuses (plus any
+  // already-selected campus) until the user searches — then the whole campus
+  // list is searchable so any campus can be found and added.
+  const midweekCampusMode = organizationType === 'campus' && serviceType === 'midweek';
+  const multiSearchQuery = multiSelectSearch.trim().toLowerCase();
+  const filteredOrgs = multiSearchQuery
+    ? allOrgs.filter(
+        (o) =>
+          o.name.toLowerCase().includes(multiSearchQuery) ||
+          o.cityLabel.toLowerCase().includes(multiSearchQuery),
+      )
+    : midweekCampusMode
+      ? allOrgs.filter((o) => (o as Campus).hasMidweek || selectedCampusIds.has(o.id))
+      : allOrgs;
   const allSelected = allOrgs.length > 0 && allOrgs.every((o) => selectedCampusIds.has(o.id));
   const selectedCount = allOrgs.filter((o) => selectedCampusIds.has(o.id)).length;
   const orgLabel = isCellChurch ? 'cell churches' : 'campuses';
@@ -1311,6 +1326,13 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           {allSelected ? 'None' : 'All'}
                         </button>
                       </div>
+
+                      {/* Midweek default hint */}
+                      {midweekCampusMode && !multiSearchQuery && (
+                        <div className="px-4 py-2 text-[11px] leading-relaxed text-[var(--text-muted)] bg-[var(--surface-subtle)] border-b border-[var(--border)]">
+                          Showing the campuses that run midweek services — search to add any other campus.
+                        </div>
+                      )}
 
                       {/* Campus list */}
                       <div className="max-h-[280px] overflow-y-auto py-1">

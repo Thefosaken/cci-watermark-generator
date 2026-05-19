@@ -9,6 +9,7 @@ export interface Campus {
   address: string;
   sundayAddress?: string;
   midweekAddress?: string;
+  hasMidweek?: boolean;
   country?: string;
   region?: string;
   active: boolean;

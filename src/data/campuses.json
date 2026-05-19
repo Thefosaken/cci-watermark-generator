@@ -6,6 +6,7 @@
     "address": "Neu Gate Exclusive Hotel & Events Centre",
     "sundayAddress": "Neu Gate Exclusive Hotel & Events Centre",
     "midweekAddress": "Neu Gate Exclusive Hotel & Events Centre",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Ogun",
     "active": true
@@ -17,6 +18,7 @@
     "address": "Hillcrest Events Center, Ago Palace Way",
     "sundayAddress": "Hillcrest Events Center, Ago Palace Way",
     "midweekAddress": "Hillcrest Events Center, Ago Palace Way",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Lagos",
     "active": true
@@ -105,6 +107,7 @@
     "address": "Vannette's Place Event Centre",
     "sundayAddress": "Vannette's Place Event Centre",
     "midweekAddress": "Edo Innovation Hub, ICE Road",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Edo",
     "active": true
@@ -116,6 +119,7 @@
     "address": "",
     "sundayAddress": "",
     "midweekAddress": "Birmingham Broadway Plaza, B168LP",
+    "hasMidweek": true,
     "country": "UK",
     "region": "West Midlands",
     "active": true
@@ -204,6 +208,7 @@
     "address": "Drapers' Hall, Bayley Lane, CV1 5RN",
     "sundayAddress": "Drapers' Hall, Bayley Lane, CV1 5RN",
     "midweekAddress": "Drapers' Hall, Bayley Ln, CV1 5RN",
+    "hasMidweek": true,
     "country": "UK",
     "region": "West Midlands",
     "active": true
@@ -303,6 +308,7 @@
     "address": "Vue Cinemas, St Enoch",
     "sundayAddress": "Vue Cinemas, St Enoch",
     "midweekAddress": "The Boardwalk, 105 Brunswick, G1 1TF",
+    "hasMidweek": true,
     "country": "UK",
     "region": "Scotland",
     "active": true
@@ -336,6 +342,7 @@
     "address": "Celebr8 Centre, Sango-Eleyele Road",
     "sundayAddress": "Celebr8 Centre, Sango-Eleyele Road",
     "midweekAddress": "Celebr8 Centre, Sango-Eleyele Road",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Oyo",
     "active": true
@@ -347,6 +354,7 @@
     "address": "Celebr8 Centre HQ, Vori Close, Acme RD",
     "sundayAddress": "Celebr8 Centre HQ, Vori Close, Acme RD",
     "midweekAddress": "Celebr8 Centre HQ, Vori Close, Acme RD",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Lagos",
     "active": true
@@ -402,6 +410,7 @@
     "address": "Queens Park Events Centre, VI",
     "sundayAddress": "Queens Park Events Centre, VI",
     "midweekAddress": "Queens Park Events Centre, VI",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Lagos",
     "active": true
@@ -435,6 +444,7 @@
     "address": "",
     "sundayAddress": "",
     "midweekAddress": "Screen 4, Odeon Cinemas Greenwich",
+    "hasMidweek": true,
     "country": "UK",
     "region": "London",
     "active": true
@@ -446,6 +456,7 @@
     "address": "William Hulmes Grammar School",
     "sundayAddress": "William Hulmes Grammar School",
     "midweekAddress": "William Hulmes Grammar School",
+    "hasMidweek": true,
     "country": "Uk",
     "region": "Manchester",
     "active": true
@@ -534,6 +545,7 @@
     "address": "Celebr8 Centre, Olu Obasanjo Road",
     "sundayAddress": "Celebr8 Centre, Olu Obasanjo Road",
     "midweekAddress": "Celebr8 Centre, Olu Obasanjo Road",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Rivers",
     "active": true
@@ -567,6 +579,7 @@
     "address": "Celebr8 Centre, Eden Park & Garden",
     "sundayAddress": "Celebr8 Centre, Eden Park & Garden",
     "midweekAddress": "Celebr8 Centre, Eden Park & Garden",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "FCT",
     "active": true
@@ -578,6 +591,7 @@
     "address": "EEMJM Event Center, off Nwaniba Road",
     "sundayAddress": "EEMJM Event Center, off Nwaniba Road",
     "midweekAddress": "EEMJM Event Center, off Nwaniba Road",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Akwa Ibom",
     "active": true
@@ -622,6 +636,7 @@
     "address": "Paradise Event Arena, Alagomeji",
     "sundayAddress": "Paradise Event Arena, Alagomeji",
     "midweekAddress": "Paradise Event Arena, Alagomeji",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Lagos",
     "active": true

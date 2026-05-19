@@ -32,8 +32,10 @@ export function ServiceTypeSelector({ value, onChange, organizationType }: Servi
     <div className="space-y-2">
       <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Service Type</label>
       <div className="relative flex bg-[var(--surface-subtle)] rounded-full p-1 border border-[var(--border)]">
-        {/* Sliding Background Pill */}
-        <div 
+        {/* Sliding Background Pill — keyed on organizationType so it remounts
+            (and snaps, no slide) when the tab set changes between Campus/Cell Church. */}
+        <div
+          key={organizationType}
           className="absolute top-1 bottom-1 left-1 bg-[var(--surface-raised)] rounded-full transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] border border-[var(--border)]"
           style={{ 
             transform: `translateX(${selectedIndex * 100}%)`,

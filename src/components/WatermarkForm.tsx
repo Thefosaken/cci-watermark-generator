@@ -114,10 +114,10 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     setSelectedCampus(null);
     setAddress('');
     setOrganizationType(newType);
-    // Cell Church has no "Special Event" service type — fall back to a valid
-    // one so the ServiceTypeSelector pill doesn't slide off (selectedIndex -1).
-    if (newType === 'cellChurch' && serviceType === 'event') {
-      setServiceType('sunday');
+    // Cell Church has no "Special Event" tab — always land on Midweek when
+    // switching in, regardless of the previously selected service type.
+    if (newType === 'cellChurch') {
+      setServiceType('midweek');
     }
   };
 

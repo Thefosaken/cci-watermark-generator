@@ -6,6 +6,7 @@ import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
+import { resolveAddress } from '@/lib/resolveAddress';
 import { createDriveFolder, uploadDriveFile, delay, loadGisScript, requestDriveToken, showFolderPicker, getGoogleConfig, DriveError } from '@/lib/googleDrive';
 import { ChromePicker } from 'react-color';
 
@@ -48,6 +49,9 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [selectedCampusIds, setSelectedCampusIds] = useState<Set<string>>(new Set());
   const [showMultiSelectModal, setShowMultiSelectModal] = useState<'zip' | 'drive' | null>(null);
   const [multiSelectSearch, setMultiSelectSearch] = useState('');
+  // Per-session manual address overrides for the multi-campus picker, keyed by
+  // org id. Holds only the campuses the user actually edited; reset on open.
+  const [addressOverrides, setAddressOverrides] = useState<Record<string, string>>({});
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -550,18 +554,64 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     }
   };
 
-  // Helper: get the active organisations for current mode, filtered by selectedCampusIds
-  const getSelectedOrganizations = () => {
-    const isCellChurch = organizationType === 'cellChurch';
-    const all = isCellChurch
-      ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-      : campuses.filter((campus) => {
-          let addr = campus.address;
-          if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-          else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-          return campus.active && addr.trim();
-        });
-    return selectedCampusIds.size > 0 ? all.filter((o) => selectedCampusIds.has(o.id)) : [];
+  // The address an organisation will export with: the user's per-session manual
+  // override if they edited it in the picker, otherwise the service-type default.
+  const resolveExportAddress = (org: Campus | CellChurch): string => {
+    const override = addressOverrides[org.id];
+    return override !== undefined ? override : resolveAddress(org, serviceType, organizationType);
+  };
+
+  // Active, picker-selected organisations whose final (possibly overridden)
+  // address is non-empty — the exact set that will be exported.
+  const getSelectedOrganizations = (): (Campus | CellChurch)[] => {
+    const all: (Campus | CellChurch)[] = organizationType === 'cellChurch' ? cellChurches : campuses;
+    return all.filter((o) => o.active && selectedCampusIds.has(o.id) && resolveExportAddress(o).trim() !== '');
+  };
+
+  // Open the multi-campus picker with every eligible org pre-selected and a
+  // fresh (empty) set of address overrides.
+  const openMultiSelect = (mode: 'zip' | 'drive') => {
+    const all: (Campus | CellChurch)[] = organizationType === 'cellChurch' ? cellChurches : campuses;
+    const eligible = all.filter((o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '');
+    setSelectedCampusIds(new Set(eligible.map((o) => o.id)));
+    setAddressOverrides({});
+    setMultiSelectSearch('');
+    setShowMultiSelectModal(mode);
+  };
+
+  const closeMultiSelect = () => {
+    setShowMultiSelectModal(null);
+    setAddressOverrides({});
+    setMultiSelectSearch('');
+  };
+
+  // Derived state for the multi-campus picker. Computed at component scope
+  // (rather than in a render-time IIFE) so the modal's event handlers aren't
+  // mistaken for render-time ref access by the react-hooks linter.
+  const isCellChurch = organizationType === 'cellChurch';
+  const multiSelectSource: (Campus | CellChurch)[] = isCellChurch ? cellChurches : campuses;
+  const allOrgs = multiSelectSource.filter(
+    (o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '',
+  );
+  const filteredOrgs = allOrgs.filter(
+    (o) =>
+      o.name.toLowerCase().includes(multiSelectSearch.toLowerCase()) ||
+      o.cityLabel.toLowerCase().includes(multiSelectSearch.toLowerCase()),
+  );
+  const allSelected = allOrgs.length > 0 && allOrgs.every((o) => selectedCampusIds.has(o.id));
+  const selectedCount = allOrgs.filter((o) => selectedCampusIds.has(o.id)).length;
+  const orgLabel = isCellChurch ? 'cell churches' : 'campuses';
+
+  const toggleOne = (id: string) => {
+    setSelectedCampusIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelectedCampusIds(allSelected ? new Set() : new Set(allOrgs.map((o) => o.id)));
   };
 
   const handleDownloadSelectedCampuses = async () => {
@@ -589,12 +639,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
         const batchResults = await Promise.all(
           batch.map(async (org) => {
-            let addr = org.address;
-            if (!isCellChurch) {
-              const campus = org as typeof campuses[0];
-              if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-              else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-            }
+            const addr = resolveExportAddress(org);
             const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
@@ -673,12 +718,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
         const results = await Promise.all(
           batch.map(async (org) => {
-            let addr = org.address;
-            if (!isCellChurch) {
-              const campus = org as typeof campuses[0];
-              if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-              else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-            }
+            const addr = resolveExportAddress(org);
             const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
@@ -1184,19 +1224,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       {showDocumentary && <div className="h-px bg-[var(--border)] mx-3 my-1"></div>}
 
                       <button
-                        onClick={() => {
-                          const isCellChurch = organizationType === 'cellChurch';
-                          const allOrgs = isCellChurch
-                            ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-                            : campuses.filter((campus) => {
-                                let addr = campus.address;
-                                if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-                                else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-                                return campus.active && addr.trim();
-                              });
-                          setSelectedCampusIds(new Set(allOrgs.map((o) => o.id)));
-                          setShowMultiSelectModal('zip');
-                        }}
+                        onClick={() => openMultiSelect('zip')}
                         disabled={!topic.trim()}
                         className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -1214,19 +1242,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       <div className="h-px bg-[var(--border)] mx-3 my-1"></div>
 
                       <button
-                        onClick={() => {
-                          const isCellChurch = organizationType === 'cellChurch';
-                          const allOrgs = isCellChurch
-                            ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-                            : campuses.filter((campus) => {
-                                let addr = campus.address;
-                                if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-                                else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-                                return campus.active && addr.trim();
-                              });
-                          setSelectedCampusIds(new Set(allOrgs.map((o) => o.id)));
-                          setShowMultiSelectModal('drive');
-                        }}
+                        onClick={() => openMultiSelect('drive')}
                         disabled={!topic.trim()}
                         className="w-full flex items-center gap-3 p-2.5 rounded-[6px] hover:bg-[var(--surface-subtle)] active:scale-[0.98] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -1245,44 +1261,11 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
             )}
 
             {/* Multi-Campus Selection Modal */}
-            {showMultiSelectModal && (() => {
-              const isCellChurch = organizationType === 'cellChurch';
-              const allOrgs = isCellChurch
-                ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-                : campuses.filter((campus) => {
-                    let addr = campus.address;
-                    if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-                    else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-                    return campus.active && addr.trim();
-                  });
-              const filteredOrgs = allOrgs.filter((o) =>
-                o.name.toLowerCase().includes(multiSelectSearch.toLowerCase()) ||
-                o.cityLabel.toLowerCase().includes(multiSelectSearch.toLowerCase())
-              );
-              const allSelected = allOrgs.every((o) => selectedCampusIds.has(o.id));
-              const selectedCount = allOrgs.filter((o) => selectedCampusIds.has(o.id)).length;
-              const orgLabel = isCellChurch ? 'cell churches' : 'campuses';
-
-              const toggleOne = (id: string) => {
-                setSelectedCampusIds((prev) => {
-                  const next = new Set(prev);
-                  next.has(id) ? next.delete(id) : next.add(id);
-                  return next;
-                });
-              };
-              const toggleAll = () => {
-                if (allSelected) {
-                  setSelectedCampusIds(new Set());
-                } else {
-                  setSelectedCampusIds(new Set(allOrgs.map((o) => o.id)));
-                }
-              };
-
-              return (
+            {showMultiSelectModal && (
                 <>
                   <div
                     className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50"
-                    onClick={() => setShowMultiSelectModal(null)}
+                    onClick={closeMultiSelect}
                   >
                     <div
                       className="relative w-full max-w-[400px] bg-[var(--surface)] rounded-[14px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden border border-[var(--border-strong)] animate-modal"
@@ -1295,7 +1278,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{selectedCount} of {allOrgs.length} selected</p>
                         </div>
                         <button
-                          onClick={() => setShowMultiSelectModal(null)}
+                          onClick={closeMultiSelect}
                           className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95"
                           aria-label="Close"
                         >
@@ -1333,33 +1316,85 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       <div className="max-h-[280px] overflow-y-auto py-1">
                         {filteredOrgs.length > 0 ? filteredOrgs.map((org) => {
                           const checked = selectedCampusIds.has(org.id);
+                          const defaultAddr = resolveAddress(org, serviceType, organizationType);
+                          const currentAddr = addressOverrides[org.id] ?? defaultAddr;
+                          const addrEdited = addressOverrides[org.id] !== undefined && addressOverrides[org.id] !== defaultAddr;
                           return (
-                            <label
+                            <div
                               key={org.id}
-                              className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-[var(--surface-subtle)] transition-colors ${
-                                checked ? 'bg-[var(--brand-red)]/5' : ''
+                              className={`px-4 py-2 transition-colors ${
+                                checked ? 'bg-[var(--brand-red)]/5' : 'hover:bg-[var(--surface-subtle)]'
                               }`}
                             >
-                              <span
-                                className={`w-4 h-4 shrink-0 rounded-[4px] border flex items-center justify-center transition-colors ${
-                                  checked
-                                    ? 'bg-[var(--brand-red)] border-[var(--brand-red)]'
-                                    : 'border-[var(--border-strong)] bg-[var(--surface)]'
-                                }`}
+                              <div
+                                className="flex items-center gap-3 cursor-pointer py-0.5"
                                 onClick={() => toggleOne(org.id)}
                               >
-                                {checked && (
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                )}
-                              </span>
-                              <input type="checkbox" checked={checked} onChange={() => toggleOne(org.id)} className="sr-only" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[13px] font-medium text-[var(--text)] truncate">{org.name}</div>
-                                <div className="text-[11px] text-[var(--text-muted)] truncate">{org.cityLabel}</div>
+                                <span
+                                  className={`w-4 h-4 shrink-0 rounded-[4px] border flex items-center justify-center transition-colors ${
+                                    checked
+                                      ? 'bg-[var(--brand-red)] border-[var(--brand-red)]'
+                                      : 'border-[var(--border-strong)] bg-[var(--surface)]'
+                                  }`}
+                                >
+                                  {checked && (
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                  )}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[13px] font-medium text-[var(--text)] truncate flex items-center gap-1.5">
+                                    {org.name}
+                                    {addrEdited && (
+                                      <span
+                                        className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--brand-red)]"
+                                        title="Address edited for this export"
+                                      />
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-[var(--text-muted)] truncate">{org.cityLabel}</div>
+                                </div>
                               </div>
-                            </label>
+                              {checked && (
+                                <div
+                                  className="flex items-center gap-1 mt-1 pl-7"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-faint)]">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                  </svg>
+                                  <input
+                                    type="text"
+                                    value={currentAddr}
+                                    onChange={(e) => setAddressOverrides((prev) => ({ ...prev, [org.id]: e.target.value }))}
+                                    placeholder="Venue address..."
+                                    title="Edit the venue address used for this campus in this export"
+                                    className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text-muted)] px-1.5 py-1 rounded-[5px] border border-transparent hover:border-[var(--border)] focus:border-[var(--brand-red)] focus:bg-[var(--surface)] focus:text-[var(--text)] outline-none transition-colors"
+                                  />
+                                  {addrEdited && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setAddressOverrides((prev) => {
+                                          const next = { ...prev };
+                                          delete next[org.id];
+                                          return next;
+                                        })
+                                      }
+                                      title="Reset to default address"
+                                      className="shrink-0 p-1 text-[var(--text-faint)] hover:text-[var(--brand-red)] transition-colors active:scale-90"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           );
                         }) : (
                           <div className="py-6 text-center text-[13px] text-[var(--text-muted)]">No {orgLabel} found</div>
@@ -1394,8 +1429,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     </div>
                   </div>
                 </>
-              );
-            })()}
+            )}
 
             {/* Progress Modal */}
             {isGeneratingAll && (

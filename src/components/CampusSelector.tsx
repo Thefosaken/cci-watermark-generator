@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Campus, CellChurch, ServiceType, OrganizationType } from '@/types/watermark';
+import { resolveAddress } from '@/lib/resolveAddress';
 
 interface CampusSelectorProps {
   campuses: Campus[];
@@ -24,20 +25,6 @@ export function CampusSelector({ campuses, cellChurches, value, serviceType, org
     c.name.toLowerCase().includes(search.toLowerCase()) || 
     c.cityLabel.toLowerCase().includes(search.toLowerCase())
   );
-
-  const getDisplayAddress = (org: Campus | CellChurch) => {
-    if (organizationType === 'cellChurch') {
-      return (org as CellChurch).address;
-    }
-    const campus = org as Campus;
-    if (serviceType === 'midweek' && campus.midweekAddress) {
-      return campus.midweekAddress;
-    }
-    if (serviceType === 'sunday' && campus.sundayAddress) {
-      return campus.sundayAddress;
-    }
-    return campus.address;
-  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -138,7 +125,7 @@ export function CampusSelector({ campuses, cellChurches, value, serviceType, org
 
       {value && (
         <p className="text-[13px] text-[var(--text-faint)] leading-relaxed">
-          {value.cityLabel} <span className="mx-1.5 opacity-50">•</span> {getDisplayAddress(value)}
+          {value.cityLabel} <span className="mx-1.5 opacity-50">•</span> {resolveAddress(value, serviceType, organizationType)}
         </p>
       )}
     </div>

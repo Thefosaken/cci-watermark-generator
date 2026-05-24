@@ -435,16 +435,24 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       }
 
       setIsUploadingToDrive(true);
-
       const BATCH_SIZE = 4;
       const t = topic.trim();
       const st = serviceType;
 
-      const batchResults: Array<{ org: Campus | CellChurch; pBlob: Blob; lBlob: Blob; dpBlob: Blob | null; dlBlob: Blob | null }> = [];
+      const date = new Date().toISOString().split('T')[0];
+      const topicSlug = t.replace(/\\s+/g, '-');
+      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
+      const rootFolderName = `CCI_${orgSlug}_${topicSlug}_Watermark_${date}`;
+
+      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
+      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
+
+      const totalFiles = activeOrganizations.length * (isCellChurch ? 2 : 4);
+      let uploaded = 0;
 
       for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
         const batch = activeOrganizations.slice(i, i + BATCH_SIZE);
-        setProgress({ current: i + 1, total: activeOrganizations.length, campusName: batch.map((c) => c.name).join(', ') });
+        setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
 
         const results = await Promise.all(
           batch.map(async (org) => {
@@ -455,88 +463,37 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
             }
 
-            const payload: WatermarkPayload = {
-              serviceType: st,
-              topic: t,
-              campusName: org.name,
-              cityLabel: org.cityLabel,
-              address: addr.trim(),
-              eventLogoUrl: eventLogo || undefined,
-              eventBgColor,
-              eventLogoScale,
-              isCellChurch,
-            };
-
-            const [portrait, landscape] = await Promise.all([
-              renderWatermark(payload, 'portrait', logoRef.current!, undefined),
-              renderWatermark(payload, 'landscape', logoRef.current!, undefined),
-            ]);
-
-            const [pBlob, lBlob] = await Promise.all([
-              toBlob(portrait.canvas),
-              toBlob(landscape.canvas),
-            ]);
-
-            let dpBlob: Blob | null = null;
-            let dlBlob: Blob | null = null;
-
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
+            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
+            const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
+            let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
             if (!isCellChurch) {
-              const [docPortrait, docLandscape] = await Promise.all([
-                renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-                renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
-              ]);
-              const [dp, dl] = await Promise.all([
-                toBlob(docPortrait.canvas),
-                toBlob(docLandscape.canvas),
-              ]);
-              dpBlob = dp;
-              dlBlob = dl;
+              const [docPortrait, docLandscape] = await Promise.all([renderDocumentaryWatermark(payload, 'portrait', logoRef.current!), renderDocumentaryWatermark(payload, 'landscape', logoRef.current!)]);
+              const [dp, dl] = await Promise.all([toBlob(docPortrait.canvas), toBlob(docLandscape.canvas)]);
+              dpBlob = dp; dlBlob = dl;
             }
-
             return { org, pBlob, lBlob, dpBlob, dlBlob };
           })
         );
 
-        batchResults.push(...results);
-        setProgress({ current: i + batch.length, total: activeOrganizations.length, campusName: batch[batch.length - 1].name });
-      }
+        for (const { org, pBlob, lBlob, dpBlob, dlBlob } of results) {
+          setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
+          
+          const orgId = await createDriveFolder(accessToken, org.name, rootId);
+          const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
 
-      const date = new Date().toISOString().split('T')[0];
-      const topicSlug = t.replace(/\s+/g, '-');
-      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
-      const rootFolderName = `CCI_${orgSlug}_${topicSlug}_Watermark_${date}`;
-
-      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
-
-      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
-
-      const totalFiles = batchResults.reduce((acc, { dpBlob, dlBlob }) => acc + (dpBlob && dlBlob ? 4 : 2), 0);
-      let uploaded = 0;
-
-      for (const { org, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
-        const orgId = await createDriveFolder(accessToken, org.name, rootId);
-        const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
-
-        await Promise.all([
-          uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId),
-          uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId),
-        ]);
-
-        uploaded += 2;
-
-        if (dpBlob && dlBlob) {
-          const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
-          await Promise.all([
-            uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId),
-            uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId),
-          ]);
+          await Promise.all([uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId), uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId)]);
           uploaded += 2;
+
+          if (dpBlob && dlBlob) {
+            const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
+            await Promise.all([uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId), uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId)]);
+            uploaded += 2;
+          }
+
+          setDriveProgress({ current: uploaded, total: totalFiles });
+          await delay(200);
         }
-
-        setDriveProgress({ current: uploaded, total: totalFiles });
-        setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
-
-        await delay(200);
       }
     } catch (err) {
       let message = 'Google Drive export failed. Please try again.';
@@ -730,11 +687,18 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const BATCH_SIZE = 4;
       const t = topic.trim();
       const st = serviceType;
-      const batchResults: Array<{ org: typeof orgs[0]; pBlob: Blob; lBlob: Blob; dpBlob: Blob | null; dlBlob: Blob | null }> = [];
+
+      const date = new Date().toISOString().split('T')[0];
+      const rootFolderName = `CCI_Selected_${t.replace(/\\s+/g, '-')}_Watermark_${date}`;
+      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
+      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
+
+      const totalFiles = orgs.length * (isCellChurch ? 2 : 4);
+      let uploaded = 0;
 
       for (let i = 0; i < orgs.length; i += BATCH_SIZE) {
         const batch = orgs.slice(i, i + BATCH_SIZE);
-        setProgress({ current: i + 1, total: orgs.length, campusName: batch.map((c) => c.name).join(', ') });
+        setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
 
         const results = await Promise.all(
           batch.map(async (org) => {
@@ -750,31 +714,21 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
             return { org, pBlob, lBlob, dpBlob, dlBlob };
           })
         );
-        batchResults.push(...results);
-        setProgress({ current: i + batch.length, total: orgs.length, campusName: batch[batch.length - 1].name });
-      }
 
-      const date = new Date().toISOString().split('T')[0];
-      const rootFolderName = `CCI_Selected_${t.replace(/\s+/g, '-')}_Watermark_${date}`;
-      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
-      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
-
-      const totalFiles = batchResults.reduce((acc, { dpBlob, dlBlob }) => acc + (dpBlob && dlBlob ? 4 : 2), 0);
-      let uploaded = 0;
-
-      for (const { org, pBlob, lBlob, dpBlob, dlBlob } of batchResults) {
-        const orgId = await createDriveFolder(accessToken, org.name, rootId);
-        const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
-        await Promise.all([uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId), uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId)]);
-        uploaded += 2;
-        if (dpBlob && dlBlob) {
-          const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
-          await Promise.all([uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId), uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId)]);
+        for (const { org, pBlob, lBlob, dpBlob, dlBlob } of results) {
+          setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
+          const orgId = await createDriveFolder(accessToken, org.name, rootId);
+          const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
+          await Promise.all([uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId), uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId)]);
           uploaded += 2;
+          if (dpBlob && dlBlob) {
+            const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
+            await Promise.all([uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId), uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId)]);
+            uploaded += 2;
+          }
+          setDriveProgress({ current: uploaded, total: totalFiles });
+          await delay(200);
         }
-        setDriveProgress({ current: uploaded, total: totalFiles });
-        setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
-        await delay(200);
       }
     } catch (err) {
       let message = 'Google Drive export failed. Please try again.';

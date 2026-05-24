@@ -263,11 +263,29 @@ export function showFolderPicker(token: string, apiKey: string): Promise<string>
   });
 }
 
+export async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    const res = await fetch(url, options);
+    // 429 Too Many Requests, 403 Rate Limit, or 50x Server Error
+    if (res.status === 429 || res.status === 403 || (res.status >= 500 && res.status < 600)) {
+      if (attempt === maxRetries) return res;
+      // Exponential backoff: 1s, 2s, 4s plus jitter
+      const delayMs = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+      await delay(delayMs);
+      attempt++;
+      continue;
+    }
+    return res;
+  }
+  return fetch(url, options);
+}
+
 export async function createDriveFolder(token: string, name: string, parentId?: string): Promise<string> {
   const body: Record<string, unknown> = { name, mimeType: FOLDER_MIME };
   if (parentId) body.parents = [parentId];
 
-  const res = await fetch(`${BASE_URL}/files`, {
+  const res = await fetchWithRetry(`${BASE_URL}/files`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -284,7 +302,7 @@ export async function uploadDriveFile(token: string, blob: Blob, name: string, p
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('media', blob, name);
 
-  const res = await fetch(`${UPLOAD_URL}/files?uploadType=multipart`, {
+  const res = await fetchWithRetry(`${UPLOAD_URL}/files?uploadType=multipart`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,

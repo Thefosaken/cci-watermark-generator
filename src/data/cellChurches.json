@@ -1,9 +1,44 @@
 [
   {
-    "id": "makurdi",
-    "name": "Makurdi",
-    "cityLabel": "MAKURDI",
-    "address": "Makurdi Cell Church, Benue, Nigeria",
+    "id": "aba",
+    "name": "Aba",
+    "cityLabel": "ABA",
+    "address": "Aba Cell Church, Abia, Nigeria",
+    "active": true
+  },
+  {
+    "id": "ado-ekiti",
+    "name": "Ado-Ekiti",
+    "cityLabel": "ADO-EKITI",
+    "address": "Ado-Ekiti Cell Church, Ekiti, Nigeria",
+    "active": true
+  },
+  {
+    "id": "asaba",
+    "name": "Asaba",
+    "cityLabel": "ASABA",
+    "address": "Asaba Cell Church, Delta, Nigeria",
+    "active": true
+  },
+  {
+    "id": "bonny-island",
+    "name": "Bonny Island",
+    "cityLabel": "BONNY ISLAND",
+    "address": "Bonny Island Cell Church, Rivers, Nigeria",
+    "active": true
+  },
+  {
+    "id": "ghana",
+    "name": "Ghana",
+    "cityLabel": "GHANA",
+    "address": "Ghana Cell Church, Accra, Ghana",
+    "active": true
+  },
+  {
+    "id": "ikot-ekpene",
+    "name": "Ikot Ekpene",
+    "cityLabel": "IKOT EKPENE",
+    "address": "Ikot Ekpene Cell Church, Akwa Ibom, Nigeria",
     "active": true
   },
   {
@@ -14,10 +49,45 @@
     "active": true
   },
   {
-    "id": "aba",
-    "name": "Aba",
-    "cityLabel": "ABA",
-    "address": "Aba Cell Church, Abia, Nigeria",
+    "id": "kenya",
+    "name": "Kenya",
+    "cityLabel": "KENYA",
+    "address": "Kenya Cell Church, Nairobi, Kenya",
+    "active": true
+  },
+  {
+    "id": "makurdi",
+    "name": "Makurdi",
+    "cityLabel": "MAKURDI",
+    "address": "Makurdi Cell Church, Benue, Nigeria",
+    "active": true
+  },
+  {
+    "id": "owerri",
+    "name": "Owerri",
+    "cityLabel": "OWERRI",
+    "address": "Owerri Cell Church, Imo, Nigeria",
+    "active": true
+  },
+  {
+    "id": "rwanda",
+    "name": "Rwanda",
+    "cityLabel": "RWANDA",
+    "address": "Rwanda Cell Church, Kigali, Rwanda",
+    "active": true
+  },
+  {
+    "id": "umuahia",
+    "name": "Umuahia",
+    "cityLabel": "UMUAHIA",
+    "address": "Umuahia Cell Church, Abia, Nigeria",
+    "active": true
+  },
+  {
+    "id": "yenagoa",
+    "name": "Yenagoa",
+    "cityLabel": "YENAGOA",
+    "address": "Yenagoa Cell Church, Bayelsa, Nigeria",
     "active": true
   }
 ]

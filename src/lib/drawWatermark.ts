@@ -151,10 +151,10 @@ function drawEventLogo(
   payload: WatermarkPayload,
   eventBgImage?: HTMLImageElement
 ): void {
-  // Event box: 174 × 80, sitting directly on top of the red tile (per design
-  // spec). Width matches the tile; height is fixed at 80.
+  // Event box: 174 × 81, sitting directly on top of the red tile (per design
+  // spec). Width matches the tile; height is fixed at 81.
   const rectWidth = layout.tileWidth;
-  const rectHeight = 80;
+  const rectHeight = 81;
 
   const rectX = layout.tileX;
   const rectY = layout.tileY - rectHeight;

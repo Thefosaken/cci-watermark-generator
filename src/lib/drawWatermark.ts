@@ -26,7 +26,8 @@ export async function renderWatermark(
   payload: WatermarkPayload,
   orientation: Orientation,
   logoImage: HTMLImageElement,
-  eventLogoImage?: HTMLImageElement
+  eventLogoImage?: HTMLImageElement,
+  eventBgImage?: HTMLImageElement
 ): Promise<{ canvas: HTMLCanvasElement; url: string }> {
   if (typeof document !== 'undefined' && document.fonts) {
     await document.fonts.ready;
@@ -51,7 +52,7 @@ export async function renderWatermark(
   drawAddressText(ctx, layout, payload.address);
 
   if (payload.serviceType === 'event' && eventLogoImage) {
-    drawEventLogo(ctx, layout, eventLogoImage, payload);
+    drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage);
   }
 
   const url = canvas.toDataURL('image/png');
@@ -144,7 +145,8 @@ function drawEventLogo(
   ctx: CanvasRenderingContext2D,
   layout: LayoutConfig,
   eventLogo: HTMLImageElement,
-  payload: WatermarkPayload
+  payload: WatermarkPayload,
+  eventBgImage?: HTMLImageElement
 ): void {
   // Event box: 174 × 80, sitting directly on top of the red tile (per design
   // spec). Width matches the tile; height is fixed at 80.
@@ -154,8 +156,31 @@ function drawEventLogo(
   const rectX = layout.tileX;
   const rectY = layout.tileY - rectHeight;
 
-  // Draw background rectangle
-  if (payload.eventBgColor) {
+  // Background: an uploaded image takes priority (cover-fit, clipped to the
+  // rect so it never bleeds onto the red tile). Falls back to the solid
+  // colour from the picker.
+  if (eventBgImage) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rectX, rectY, rectWidth, rectHeight);
+    ctx.clip();
+    const imgAspect = eventBgImage.width / eventBgImage.height;
+    const rectAspect = rectWidth / rectHeight;
+    let drawW: number, drawH: number, drawX: number, drawY: number;
+    if (imgAspect > rectAspect) {
+      drawH = rectHeight;
+      drawW = drawH * imgAspect;
+      drawX = rectX - (drawW - rectWidth) / 2;
+      drawY = rectY;
+    } else {
+      drawW = rectWidth;
+      drawH = drawW / imgAspect;
+      drawX = rectX;
+      drawY = rectY - (drawH - rectHeight) / 2;
+    }
+    ctx.drawImage(eventBgImage, drawX, drawY, drawW, drawH);
+    ctx.restore();
+  } else if (payload.eventBgColor) {
     ctx.fillStyle = payload.eventBgColor;
     ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
   }

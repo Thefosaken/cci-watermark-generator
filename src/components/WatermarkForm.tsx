@@ -28,6 +28,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [topic, setTopic] = useState('');
   const [address, setAddress] = useState('');
   const [eventLogo, setEventLogo] = useState<string | null>(null);
+  const [eventBgImage, setEventBgImage] = useState<string | null>(null);
   const [eventBgColor, setEventBgColor] = useState('#0000ff');
   const [eventLogoScale, setEventLogoScale] = useState(100);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
+  const eventBgImageRef = useRef<HTMLImageElement | null>(null);
   // Pre-generated blobs for instant downloads (populated during handleGenerate)
   const portraitBlobRef = useRef<Blob | null>(null);
   const landscapeBlobRef = useRef<Blob | null>(null);
@@ -156,9 +158,15 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         eventLogoRef.current = evtImg;
       }
 
+      let bgImg: HTMLImageElement | undefined;
+      if (eventBgImage) {
+        bgImg = await loadImage(eventBgImage);
+        eventBgImageRef.current = bgImg;
+      }
+
       const [portrait, landscape] = await Promise.all([
-        renderWatermark(payload, 'portrait', logoRef.current, evtImg),
-        renderWatermark(payload, 'landscape', logoRef.current, evtImg),
+        renderWatermark(payload, 'portrait', logoRef.current, evtImg, bgImg),
+        renderWatermark(payload, 'landscape', logoRef.current, evtImg, bgImg),
       ]);
 
       setPortraitPreview(portrait.url);
@@ -220,7 +228,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale]);
+  }, [eventBgColor, eventLogoScale, eventBgImage]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -505,6 +513,17 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       setIsUploadingToDrive(false);
       setShowDownloadMenu(false);
     }
+  };
+
+  const handleEventBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setEventBgImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+    // Reset so picking the same file again still fires onChange
+    e.target.value = '';
   };
 
   const handleEventLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -942,6 +961,46 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       disabled={!eventLogo}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background Image (Optional)</label>
+                <div className="relative group border border-dashed border-[var(--border-strong)] hover:border-[var(--brand-red)] rounded-[12px] transition-colors bg-[var(--surface-subtle)] hover:bg-[var(--surface)] overflow-hidden h-[60px]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEventBgImageUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    title={eventBgImage ? "Change background image" : "Upload background image"}
+                  />
+                  {eventBgImage ? (
+                    <div className="flex items-center gap-3 px-3 h-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={eventBgImage} alt="Background" className="h-10 w-16 object-cover rounded-[6px] border border-[var(--border)]" />
+                      <span className="text-[12px] text-[var(--text-muted)] flex-1">Overrides solid colour</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setEventBgImage(null); }}
+                        className="relative z-20 w-7 h-7 rounded-full bg-[var(--surface)] border border-[var(--border-strong)] hover:border-[var(--brand-red)] flex items-center justify-center transition-colors flex-shrink-0"
+                        title="Remove background image"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 h-full text-[var(--text-muted)]">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                      <span className="text-[13px] font-medium">Click to upload background image</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

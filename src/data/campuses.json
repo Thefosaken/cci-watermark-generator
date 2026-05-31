@@ -628,5 +628,16 @@
     "country": "Canada",
     "region": "Manitoba",
     "active": true
+  },
+  {
+    "id": "yaba",
+    "name": "Yaba",
+    "cityLabel": "YABA",
+    "address": "Paradise Event Arena, Alagomeji",
+    "sundayAddress": "Paradise Event Arena, Alagomeji",
+    "midweekAddress": "Paradise Event Arena, Alagomeji",
+    "country": "Nigeria",
+    "region": "Lagos",
+    "active": true
   }
 ]

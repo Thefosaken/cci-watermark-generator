@@ -146,13 +146,15 @@ function drawEventLogo(
   eventLogo: HTMLImageElement,
   payload: WatermarkPayload
 ): void {
-  const baseRectWidth = 454;
-  const baseRectHeight = 174;
+  // Box matches the red tile's footprint so it reads as a peer to the tile,
+  // not a letterbox above it. The +40 cuts the box bottom into the top of the
+  // red tile to match the reference (spw.png).
+  const EVENT_BOX_OVERLAP_INTO_TILE = 40;
   const rectWidth = layout.tileWidth;
-  const rectHeight = layout.tileWidth * (baseRectHeight / baseRectWidth);
-  
+  const rectHeight = layout.tileVisibleHeight;
+
   const rectX = layout.tileX;
-  const rectY = layout.tileY - rectHeight + 12;
+  const rectY = layout.tileY - rectHeight + EVENT_BOX_OVERLAP_INTO_TILE;
 
   // Draw background rectangle
   if (payload.eventBgColor) {

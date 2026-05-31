@@ -234,6 +234,14 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
     new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'));
 
+  // Load the optional event-logo and background-image assets once per bulk
+  // run so each per-campus render can reuse the decoded HTMLImageElement.
+  const loadEventAssets = async (): Promise<{ evt?: HTMLImageElement; bg?: HTMLImageElement }> => {
+    const evt = eventLogo ? await loadImage(eventLogo) : undefined;
+    const bg = eventBgImage ? await loadImage(eventBgImage) : undefined;
+    return { evt, bg };
+  };
+
   // Individual downloads use pre-cached blobs — instant click response
   const handleDownloadPortrait = async () => {
     if (!portraitBlobRef.current || !selectedCampus) return;
@@ -313,6 +321,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
+      const { evt, bg } = await loadEventAssets();
+
       const BATCH_SIZE = 4;
       for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
         const batch = activeOrganizations.slice(i, Math.min(i + BATCH_SIZE, activeOrganizations.length));
@@ -340,8 +350,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
             };
 
             const [portrait, landscape] = await Promise.all([
-              renderWatermark(payload, 'portrait', logoRef.current!, undefined),
-              renderWatermark(payload, 'landscape', logoRef.current!, undefined),
+              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
             ]);
 
             const [pBlob, lBlob] = await Promise.all([
@@ -458,6 +468,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const totalFiles = activeOrganizations.length * (isCellChurch ? 2 : 4);
       let uploaded = 0;
 
+      const { evt, bg } = await loadEventAssets();
+
       for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
         const batch = activeOrganizations.slice(i, i + BATCH_SIZE);
         setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
@@ -472,7 +484,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
             }
 
             const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
+            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
             if (!isCellChurch) {
@@ -629,6 +641,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const zip = new JSZip();
       const BATCH_SIZE = 4;
 
+      const { evt, bg } = await loadEventAssets();
+
       for (let i = 0; i < orgs.length; i += BATCH_SIZE) {
         const batch = orgs.slice(i, Math.min(i + BATCH_SIZE, orgs.length));
         setProgress({ current: i + 1, total: orgs.length, campusName: batch.map((c) => c.name).join(', ') });
@@ -637,7 +651,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
             const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
+            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
             if (!isCellChurch) {
@@ -715,6 +729,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const totalFiles = orgs.length * (isCellChurch ? 2 : 4);
       let uploaded = 0;
 
+      const { evt, bg } = await loadEventAssets();
+
       for (let i = 0; i < orgs.length; i += BATCH_SIZE) {
         const batch = orgs.slice(i, i + BATCH_SIZE);
         setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
@@ -723,7 +739,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
             const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, undefined), renderWatermark(payload, 'landscape', logoRef.current!, undefined)]);
+            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
             if (!isCellChurch) {
@@ -869,12 +885,28 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 relative">
                   <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>
-                  <div 
-                    className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] cursor-pointer hover:border-[var(--brand-red)] transition-colors"
-                    onClick={() => setShowColorPicker(!showColorPicker)}
-                  >
-                    <div className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner" style={{ backgroundColor: eventBgColor }}></div>
-                    <span className="text-[13px] text-[var(--text)] uppercase font-medium">{eventBgColor}</span>
+                  <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner cursor-pointer hover:scale-105 transition-transform"
+                      style={{ backgroundColor: eventBgColor }}
+                      title="Open colour picker"
+                      aria-label="Open colour picker"
+                    />
+                    <input
+                      type="text"
+                      value={eventBgColor}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        val = val.startsWith('#') ? val.slice(1) : val;
+                        val = val.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+                        setEventBgColor('#' + val);
+                      }}
+                      className="flex-1 min-w-0 bg-transparent text-[13px] text-[var(--text)] uppercase font-medium focus:outline-none"
+                      spellCheck={false}
+                      maxLength={7}
+                    />
                   </div>
 
                   {showColorPicker && (

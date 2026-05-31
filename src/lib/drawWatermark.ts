@@ -146,16 +146,13 @@ function drawEventLogo(
   eventLogo: HTMLImageElement,
   payload: WatermarkPayload
 ): void {
-  // Box matches the red tile's footprint so it reads as a peer to the tile,
-  // not a letterbox above it. Box bottom sits just above the bottom bar so a
-  // thin strip of the red tile is still visible between the two — matching
-  // the spw.png reference.
-  const EVENT_BOX_GAP_ABOVE_BAR = 15;
+  // Event box: 174 × 80, sitting directly on top of the red tile (per design
+  // spec). Width matches the tile; height is fixed at 80.
   const rectWidth = layout.tileWidth;
-  const rectHeight = layout.tileVisibleHeight;
+  const rectHeight = 80;
 
   const rectX = layout.tileX;
-  const rectY = layout.barY - EVENT_BOX_GAP_ABOVE_BAR - rectHeight;
+  const rectY = layout.tileY - rectHeight;
 
   // Draw background rectangle
   if (payload.eventBgColor) {

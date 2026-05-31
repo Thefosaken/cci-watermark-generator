@@ -23,13 +23,13 @@ export const LAYOUTS = {
     barY: 1211,
     tileX: (1080 - 174) / 2,
     tileY: 1350 - 130,
-    logoWidth: 142,
-    logoHeight: 69,
+    logoWidth: 116,
+    logoHeight: 56,
     leftPadding: 55,
     rightPadding: 55,
-    logoToCityGap: 6,
+    logoToCityGap: 5,
     topicFontSize: 18.1,
-    cityFontSize: 15.17,
+    cityFontSize: 12.31,
   },
   landscape: {
     width: 1620,
@@ -40,13 +40,13 @@ export const LAYOUTS = {
     barY: 941,
     tileX: (1620 - 174) / 2,
     tileY: 1080 - 130,
-    logoWidth: 142,
-    logoHeight: 69,
+    logoWidth: 116,
+    logoHeight: 56,
     leftPadding: 55,
     rightPadding: 55,
-    logoToCityGap: 6,
+    logoToCityGap: 5,
     topicFontSize: 18.1,
-    cityFontSize: 15.17,
+    cityFontSize: 12.31,
   },
 } as const;
 
@@ -65,8 +65,8 @@ export const DOCUMENTARY_LAYOUTS = {
     tileX: (1080 - 209) / 2,
     tileY: 1350 - 175, // flush with bottom of frame
     // Logo inside tile
-    logoWidth: 142,
-    logoHeight: 69,
+    logoWidth: 116,
+    logoHeight: 56,
   },
   landscape: {
     width: 1620,
@@ -82,8 +82,8 @@ export const DOCUMENTARY_LAYOUTS = {
     tileX: (1620 - 209) / 2,
     tileY: 1080 - 175, // flush with bottom of frame
     // Logo inside tile
-    logoWidth: 142,
-    logoHeight: 69,
+    logoWidth: 116,
+    logoHeight: 56,
   },
 } as const;
 

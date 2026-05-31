@@ -829,7 +829,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     <div className="relative w-full h-full rounded-[8px] overflow-hidden bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlNWU1Ij48L3JlY3Q+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU1ZTUiPjwvcmVjdD48L3N2Zz4=')]">
                       <div className="absolute inset-0 transition-colors" style={{ backgroundColor: eventBgColor }}></div>
                       <img src={eventLogo} alt="Event logo" className="relative z-0 w-full h-full object-contain p-2" style={{ transform: `scale(${eventLogoScale / 100})` }} />
-                      <div className="absolute inset-0 z-10 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="pointer-events-none absolute inset-0 z-10 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-white text-[13px] font-medium">Click to change</span>
                       </div>
                     </div>

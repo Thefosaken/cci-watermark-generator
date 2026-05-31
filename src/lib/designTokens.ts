@@ -13,7 +13,49 @@ export const DESIGN_TOKENS = {
   },
 } as const;
 
+// Default layout used by Sunday and Midweek services (original CCI watermark
+// proportions): a 209-wide red tile flush with the bottom of the frame.
 export const LAYOUTS = {
+  portrait: {
+    width: 1080,
+    height: 1350,
+    barHeight: 74,
+    tileWidth: 209,
+    tileVisibleHeight: 177,
+    barY: 1211,
+    tileX: 436,
+    tileY: 1173,
+    logoWidth: 142,
+    logoHeight: 69,
+    leftPadding: 55,
+    rightPadding: 55,
+    logoToCityGap: 6,
+    topicFontSize: 18.1,
+    cityFontSize: 15.17,
+  },
+  landscape: {
+    width: 1620,
+    height: 1080,
+    barHeight: 74,
+    tileWidth: 209,
+    tileVisibleHeight: 187,
+    barY: 941,
+    tileX: 706,
+    tileY: 893,
+    logoWidth: 142,
+    logoHeight: 69,
+    leftPadding: 55,
+    rightPadding: 55,
+    logoToCityGap: 6,
+    topicFontSize: 18.1,
+    cityFontSize: 15.17,
+  },
+} as const;
+
+// Special Event layout: smaller 174x130 red tile with a 116x56 CCI logo so
+// the 174x80 event-logo box can sit directly on top without crowding. Used
+// only when serviceType === 'event'.
+export const EVENT_LAYOUTS = {
   portrait: {
     width: 1080,
     height: 1350,

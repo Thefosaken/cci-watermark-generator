@@ -1,5 +1,5 @@
 import { WatermarkPayload } from '@/types/watermark';
-import { DESIGN_TOKENS, LAYOUTS, SERVICE_LABELS, DOCUMENTARY_LAYOUTS, DOCUMENTARY_SERVICE_LABELS } from './designTokens';
+import { DESIGN_TOKENS, LAYOUTS, EVENT_LAYOUTS, SERVICE_LABELS, DOCUMENTARY_LAYOUTS, DOCUMENTARY_SERVICE_LABELS } from './designTokens';
 import { fitTextToWidth } from './fitText';
 
 export type Orientation = 'portrait' | 'landscape';
@@ -33,7 +33,10 @@ export async function renderWatermark(
     await document.fonts.ready;
   }
 
-  const layout = LAYOUTS[orientation] as LayoutConfig;
+  // Special Event uses a smaller red tile so the event-logo box can sit on
+  // top without crowding; Sunday and Midweek keep the original proportions.
+  const layoutSet = payload.serviceType === 'event' ? EVENT_LAYOUTS : LAYOUTS;
+  const layout = layoutSet[orientation] as LayoutConfig;
   const scale = 3; // 3x = portrait 3240×4050 / landscape 5760×3240 — print quality
 
   const canvas = document.createElement('canvas');

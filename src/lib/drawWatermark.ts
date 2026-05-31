@@ -54,7 +54,7 @@ export async function renderWatermark(
   drawServiceText(ctx, layout, payload.serviceType, payload.topic);
   drawAddressText(ctx, layout, payload.address);
 
-  if (payload.serviceType === 'event' && eventLogoImage) {
+  if (payload.serviceType === 'event') {
     drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage);
   }
 
@@ -147,7 +147,7 @@ function drawAddressText(ctx: CanvasRenderingContext2D, layout: LayoutConfig, ad
 function drawEventLogo(
   ctx: CanvasRenderingContext2D,
   layout: LayoutConfig,
-  eventLogo: HTMLImageElement,
+  eventLogo: HTMLImageElement | undefined,
   payload: WatermarkPayload,
   eventBgImage?: HTMLImageElement
 ): void {
@@ -188,16 +188,19 @@ function drawEventLogo(
     ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
   }
 
-  // Draw scaled logo inside
+  // Draw scaled logo inside (only if a logo was uploaded — without one, the
+  // background box alone is a valid preview).
+  if (!eventLogo) return;
+
   const scale = (payload.eventLogoScale || 100) / 100;
-  
+
   const padding = 20;
   const maxLogoWidth = rectWidth - padding * 2;
   const maxLogoHeight = rectHeight - padding * 2;
-  
+
   const imgAspect = eventLogo.width / eventLogo.height;
   const boxAspect = maxLogoWidth / maxLogoHeight;
-  
+
   let baseWidth, baseHeight;
   if (imgAspect > boxAspect) {
     baseWidth = maxLogoWidth;
@@ -206,13 +209,13 @@ function drawEventLogo(
     baseHeight = maxLogoHeight;
     baseWidth = maxLogoHeight * imgAspect;
   }
-  
+
   const finalWidth = baseWidth * scale;
   const finalHeight = baseHeight * scale;
-  
+
   const logoX = rectX + (rectWidth / 2) - (finalWidth / 2);
   const logoY = rectY + (rectHeight / 2) - (finalHeight / 2);
-  
+
   ctx.drawImage(eventLogo, logoX, logoY, finalWidth, finalHeight);
 }
 

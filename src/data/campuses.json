@@ -636,6 +636,7 @@
     "address": "Paradise Event Arena, Alagomeji",
     "sundayAddress": "Paradise Event Arena, Alagomeji",
     "midweekAddress": "Paradise Event Arena, Alagomeji",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Lagos",
     "active": true

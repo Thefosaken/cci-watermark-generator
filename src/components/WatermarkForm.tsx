@@ -274,7 +274,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     const { saveAs } = await import('file-saver');
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
-    const normalFolder = zip.folder('Normal');
+    const normalFolder = zip.folder('Service');
     const docFolder = zip.folder('Documentary');
     normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'), portraitBlobRef.current);
     normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'), landscapeBlobRef.current);

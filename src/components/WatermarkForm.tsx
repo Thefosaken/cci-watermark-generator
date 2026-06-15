@@ -8,8 +8,6 @@ import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/dr
 import { generateFilename, generateDocumentaryFilename } from '@/lib/filename';
 import { resolveAddress } from '@/lib/resolveAddress';
 import { createDriveFolder, uploadDriveFile, delay, loadGisScript, requestDriveToken, showFolderPicker, getGoogleConfig, DriveError } from '@/lib/googleDrive';
-import { ChromePicker } from 'react-color';
-
 const PRESET_COLORS = [
   '#0000FF', '#D32126', '#000000', '#FFFFFF', 
   '#F5A623', '#7ED321', '#4A90E2', '#9013FE'
@@ -41,7 +39,6 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, campusName: '' });
   const [lastAddressKey, setLastAddressKey] = useState('');
@@ -784,6 +781,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   // The first line of an error is its summary; any remaining lines are detail.
   const [errorSummary, ...errorRestLines] = (error ?? '').split('\n');
   const errorDetails = errorRestLines.join('\n').trim();
+  const sliderProgress = ((eventLogoScale - 10) / (400 - 10)) * 100;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -885,11 +883,11 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 relative">
                   <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>
-                  <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-colors">
+                  <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-colors duration-200">
                     <button
                       type="button"
                       onClick={() => setShowColorPicker(!showColorPicker)}
-                      className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner cursor-pointer hover:scale-105 transition-transform"
+                      className="w-7 h-7 rounded-full border-2 border-[var(--border-strong)] flex-shrink-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 ease-[var(--ease-spring)]"
                       style={{ backgroundColor: eventBgColor }}
                       title="Open colour picker"
                       aria-label="Open colour picker"
@@ -903,7 +901,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                         val = val.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
                         setEventBgColor('#' + val);
                       }}
-                      className="flex-1 min-w-0 bg-transparent text-[13px] text-[var(--text)] uppercase font-medium focus:outline-none"
+                      className="flex-1 min-w-0 bg-transparent text-[13px] text-[var(--text)] uppercase font-mono font-medium tracking-[0.05em] focus:outline-none"
                       spellCheck={false}
                       maxLength={7}
                     />
@@ -911,87 +909,164 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
                   {showColorPicker && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => { setShowColorPicker(false); setShowAdvancedPicker(false); }}></div>
-                      <div className="absolute left-0 top-[calc(100%+8px)] z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-max animate-in fade-in zoom-in-95 duration-200">
-                        {showAdvancedPicker ? (
-                          <div className="flex flex-col gap-3">
-                            <ChromePicker 
-                              color={eventBgColor} 
-                              onChange={(color) => setEventBgColor(color.hex)} 
-                              disableAlpha={true}
-                              styles={{ default: { picker: { boxShadow: 'none', background: 'transparent', width: '200px' } } }}
-                            />
-                            <button 
-                              onClick={() => setShowAdvancedPicker(false)}
-                              className="w-full py-1.5 text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-                            >
-                              Back to Presets
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="grid grid-cols-5 gap-2 mb-3 w-[196px]">
-                              {PRESET_COLORS.map(c => (
-                                <button
-                                  key={c}
-                                  onClick={() => { setEventBgColor(c); setShowColorPicker(false); }}
-                                  className={`w-full aspect-square rounded-[6px] border ${eventBgColor.toLowerCase() === c.toLowerCase() ? 'border-[var(--brand-red)] ring-2 ring-[var(--brand-red)]/20' : 'border-[var(--border)]'} shadow-inner hover:scale-105 active:scale-95 transition-all`}
-                                  style={{ backgroundColor: c }}
-                                  title={c}
-                                />
-                              ))}
-                              <button 
-                                onClick={() => setShowAdvancedPicker(true)}
-                                className="relative w-full aspect-square rounded-[6px] cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center overflow-hidden border border-[var(--border)] shadow-inner"
-                                title="Custom Color"
+                      <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)} />
+                      <div
+                        className="absolute left-0 top-[calc(100%+8px)] z-50 p-4 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.15)] w-max origin-top-left animate-in fade-in zoom-in-95 duration-200"
+                        style={{ animation: 'pickerEnter 200ms var(--ease-out-expo) both' }}
+                      >
+                        <style>{`
+                          @keyframes pickerEnter {
+                            from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+                            to { opacity: 1; transform: scale(1) translateY(0); }
+                          }
+                          @keyframes swatchPop {
+                            0% { transform: scale(0.7); opacity: 0; }
+                            100% { transform: scale(1); opacity: 1; }
+                          }
+                          @keyframes slideUp {
+                            from { opacity: 0; transform: translateY(6px); }
+                            to { opacity: 1; transform: translateY(0); }
+                          }
+                          .scale-slider {
+                            -webkit-appearance: none;
+                            appearance: none;
+                            width: 100%;
+                            height: 5px;
+                            border-radius: 3px;
+                            outline: none;
+                            cursor: pointer;
+                            background: transparent;
+                            position: relative;
+                            z-index: 10;
+                          }
+                          .scale-slider::-webkit-slider-thumb {
+                            -webkit-appearance: none;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: white;
+                            border: 2px solid #d32126;
+                            box-shadow: 0 2px 8px rgba(211,33,38,0.25);
+                            cursor: pointer;
+                            transition: box-shadow 0.15s ease, transform 0.15s ease;
+                          }
+                          .scale-slider::-webkit-slider-thumb:hover {
+                            box-shadow: 0 2px 12px rgba(211,33,38,0.35), 0 0 0 4px rgba(211,33,38,0.1);
+                            transform: scale(1.1);
+                          }
+                          .scale-slider::-webkit-slider-thumb:active {
+                            transform: scale(0.95);
+                          }
+                          .scale-slider::-moz-range-track {
+                            height: 5px;
+                            border-radius: 3px;
+                            background: transparent;
+                            border: none;
+                          }
+                          .scale-slider::-moz-range-thumb {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: white;
+                            border: 2px solid #d32126;
+                            box-shadow: 0 2px 8px rgba(211,33,38,0.25);
+                            cursor: pointer;
+                          }
+                          .scale-slider::-moz-range-progress {
+                            height: 5px;
+                            border-radius: 3px;
+                            background: #d32126;
+                          }
+                          .scale-slider:disabled {
+                            opacity: 0.4;
+                            cursor: not-allowed;
+                          }
+                        `}</style>
+                        <div className="flex flex-col gap-3">
+                          <div className="grid grid-cols-5 gap-2 w-[200px]">
+                            {PRESET_COLORS.map((c, i) => (
+                              <button
+                                key={c}
+                                onClick={() => { setEventBgColor(c); setShowColorPicker(false); }}
+                                className="relative w-full aspect-square rounded-[8px] cursor-pointer transition-all duration-150 ease-[var(--ease-spring)] active:scale-90 hover:z-10"
+                                style={{
+                                  backgroundColor: c,
+                                  animation: `swatchPop 300ms var(--ease-out-expo) ${i * 30}ms both`,
+                                  boxShadow: eventBgColor.toLowerCase() === c.toLowerCase()
+                                    ? 'inset 0 2px 4px rgba(0,0,0,0.15), 0 0 0 2px var(--brand-red), 0 0 0 4px rgba(211,33,38,0.15)'
+                                    : 'inset 0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.04)',
+                                }}
+                                title={c}
                               >
-                                <div className="absolute inset-0 pointer-events-none" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}></div>
-                                <div className="absolute inset-[3px] bg-[var(--surface)] rounded-full flex items-center justify-center shadow-sm pointer-events-none">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text)]">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                  </svg>
-                                </div>
+                                {eventBgColor.toLowerCase() === c.toLowerCase() && (
+                                  <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.toLowerCase() === '#ffffff' ? '#9CA3AF' : 'white'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  </span>
+                                )}
                               </button>
-                            </div>
-                            <div className="flex items-center gap-2 w-[196px]">
-                              <span className="text-[12px] text-[var(--text-muted)] font-medium">HEX</span>
-                              <div className="relative flex-1">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text-muted)]">#</span>
-                                <input
-                                  type="text"
-                                  value={eventBgColor.replace('#', '')}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
-                                    setEventBgColor(`#${val}`);
-                                  }}
-                                  className="w-full h-8 pl-5 pr-2 text-[13px] uppercase bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[6px] focus:outline-none focus:border-[var(--brand-red)] transition-colors"
-                                  placeholder="0000FF"
-                                />
+                            ))}
+                            <label className="relative w-full aspect-square rounded-[8px] cursor-pointer transition-all duration-150 active:scale-90 hover:z-10 overflow-hidden border border-[var(--border)]" style={{ animation: 'swatchPop 300ms var(--ease-out-expo) 250ms both' }}>
+                              <div className="absolute inset-0 pointer-events-none" style={{ background: 'conic-gradient(from 90deg, #FF0000, #FF8800, #FFDD00, #00DD00, #0088FF, #8800FF, #FF0000)' }} />
+                              <div className="absolute inset-[2px] bg-[var(--surface)] rounded-[6px] flex items-center justify-center pointer-events-none shadow-sm">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-[var(--text-muted)]">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <circle cx="12" cy="12" r="4" />
+                                </svg>
                               </div>
+                              <input
+                                type="color"
+                                value={eventBgColor}
+                                onChange={(e) => setEventBgColor(e.target.value)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                title="Pick custom color"
+                              />
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-2" style={{ animation: 'slideUp 250ms var(--ease-out-expo) 300ms both' }}>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">HEX</span>
+                            <div className="relative flex-1">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text-muted)] font-medium pointer-events-none">#</span>
+                              <input
+                                type="text"
+                                value={eventBgColor.replace('#', '')}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+                                  setEventBgColor(`#${val}`);
+                                }}
+                                className="w-full h-8 pl-6 pr-2.5 text-[13px] uppercase font-mono bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[8px] focus:outline-none focus:border-[var(--brand-red)] focus:ring-2 focus:ring-[var(--brand-red)]/10 transition-all duration-150"
+                                placeholder="0000FF"
+                              />
                             </div>
-                          </>
-                        )}
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between h-[18px]">
+                  <div className="flex items-center justify-between">
                     <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Scale</label>
-                    <span className="text-[12px] text-[var(--text-muted)] font-medium">{eventLogoScale}%</span>
+                    <span className="text-[13px] font-semibold text-[var(--text)] tabular-nums">{eventLogoScale}%</span>
                   </div>
                   <div className="flex items-center h-11">
-                    <input
-                      type="range"
-                      min="10"
-                      max="400"
-                      value={eventLogoScale}
-                      onChange={(e) => setEventLogoScale(Number(e.target.value))}
-                      className="w-full accent-[var(--brand-red)]"
-                      disabled={!eventLogo}
-                    />
+                    <div className="relative w-full h-5 flex items-center">
+                      <div
+                        className="absolute left-0 right-0 h-[5px] rounded-full pointer-events-none overflow-hidden"
+                        style={{ background: `linear-gradient(to right, #d32126 0%, #d32126 ${sliderProgress}%, var(--border) ${sliderProgress}%, var(--border) 100%)` }}
+                      />
+                      <input
+                        type="range"
+                        min="10"
+                        max="400"
+                        value={eventLogoScale}
+                        onChange={(e) => setEventLogoScale(Number(e.target.value))}
+                        className="scale-slider"
+                        disabled={!eventLogo}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

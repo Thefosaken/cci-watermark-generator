@@ -79,6 +79,17 @@
     "active": true
   },
   {
+    "id": "australia",
+    "name": "Australia",
+    "cityLabel": "AUSTRALIA",
+    "address": "Liardet Community Centre, Port Melbourne",
+    "sundayAddress": "Liardet Community Centre, Port Melbourne",
+    "midweekAddress": "Liardet Community Centre, Port Melbourne",
+    "active": true,
+    "country": "Australia",
+    "region": "Victoria"
+  },
+  {
     "id": "austin",
     "name": "Austin",
     "cityLabel": "AUSTIN",
@@ -493,6 +504,17 @@
     "country": "UK",
     "region": "Tyne and Wear",
     "active": true
+  },
+  {
+    "id": "ogbomoso",
+    "name": "Ogbomoso",
+    "cityLabel": "OGBOMOSO",
+    "address": "SQI College of ICT, Opp. Yoaco Station",
+    "sundayAddress": "SQI College of ICT, Opp. Yoaco Station",
+    "midweekAddress": "SQI College of ICT, Opp. Yoaco Station",
+    "active": true,
+    "country": "Nigeria",
+    "region": "Oyo"
   },
   {
     "id": "olu-obasanjo",

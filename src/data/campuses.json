@@ -104,9 +104,9 @@
     "id": "barrie",
     "name": "Barrie",
     "cityLabel": "BARRIE",
-    "address": "Columbus Hall, Berczy St, ON L4M 3R2",
-    "sundayAddress": "Columbus Hall, Berczy St, ON L4M 3R2",
-    "midweekAddress": "Columbus Hall, Berczy St, ON L4M 3R2",
+    "address": "Columbus Hall, 93 Berczy St, Barrie, ON L4M 3R2",
+    "sundayAddress": "Columbus Hall, 93 Berczy St, Barrie, ON L4M 3R2",
+    "midweekAddress": "Columbus Hall, 93 Berczy St, Barrie, ON L4M 3R2",
     "country": "Canada",
     "region": "Ontario",
     "active": true

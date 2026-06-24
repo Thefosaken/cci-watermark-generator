@@ -240,8 +240,8 @@
     "name": "DMV",
     "cityLabel": "DMV",
     "address": "3501 Windom Rd, Brentwood, Maryland 20722",
-    "sundayAddress": "3501 Windom Rd, Brentwood, MD 20722",
-    "midweekAddress": "3501 Windom Rd, Brentwood, MD 20722",
+    "sundayAddress": "3501 Windom Rd, Brentwood, Maryland 20722",
+    "midweekAddress": "3501 Windom Rd, Brentwood, Maryland 20722",
     "country": "USA",
     "region": "Maryland",
     "active": true

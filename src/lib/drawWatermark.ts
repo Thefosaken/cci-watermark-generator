@@ -194,7 +194,7 @@ function drawEventLogo(
 
   const scale = (payload.eventLogoScale || 100) / 100;
 
-  const padding = 20;
+  const padding = 0;
   const maxLogoWidth = rectWidth - padding * 2;
   const maxLogoHeight = rectHeight - padding * 2;
 
@@ -215,7 +215,13 @@ function drawEventLogo(
 
   const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, finalWidth, finalHeight, payload.eventAlign as EventAlign);
 
+  // Clip the logo to the container so edge-aligned positions never bleed
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rectX, rectY, rectWidth, rectHeight);
+  ctx.clip();
   ctx.drawImage(eventLogo, position.x, position.y, finalWidth, finalHeight);
+  ctx.restore();
 }
 
 export async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -237,7 +243,7 @@ function getEventLogoPosition(
   logoHeight: number,
   align?: EventAlign
 ): { x: number; y: number } {
-  const padding = 8;
+  const padding = 0;
   const innerX = rectX + padding;
   const innerY = rectY + padding;
   const innerW = rectWidth - padding * 2;

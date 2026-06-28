@@ -15,6 +15,18 @@ const PRESET_COLORS = [
   '#F5A623', '#7ED321', '#4A90E2', '#9013FE'
 ];
 
+const EVENT_ALIGN_ROTATIONS: Record<string, number | 'dot'> = {
+  'top-left': 315,
+  'top-center': 0,
+  'top-right': 45,
+  'center-left': 270,
+  'center-center': 'dot',
+  'center-right': 90,
+  'bottom-left': 225,
+  'bottom-center': 180,
+  'bottom-right': 135,
+};
+
 interface WatermarkFormProps {
   campuses: Campus[];
   cellChurches: CellChurch[];
@@ -35,7 +47,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [landscapePreview, setLandscapePreview] = useState<string | null>(null);
   const [docPortraitPreview, setDocPortraitPreview] = useState<string | null>(null);
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
-  const [eventAlign, setEventAlign] = useState<EventAlign>('top-center');
+  const [eventAlign, setEventAlign] = useState<EventAlign>('center-center');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
@@ -151,6 +163,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         eventBgColor,
         eventLogoScale,
         isCellChurch: organizationType === 'cellChurch',
+        eventAlign,
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -652,7 +665,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const batchResults = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
+            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -887,30 +900,37 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               <div className="space-y-2">
                 <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Logo Position</label>
                 <div className="grid grid-cols-3 gap-1 w-fit mx-auto">
-                  {[
-                    { value: 'top-left' as const, icon: '↖' },
-                    { value: 'top-center' as const, icon: '↑' },
-                    { value: 'top-right' as const, icon: '↗' },
-                    { value: 'center-left' as const, icon: '←' },
-                    { value: 'center-center' as const, icon: '●' },
-                    { value: 'center-right' as const, icon: '→' },
-                    { value: 'bottom-left' as const, icon: '↙' },
-                    { value: 'bottom-center' as const, icon: '↓' },
-                    { value: 'bottom-right' as const, icon: '↘' },
-                  ].map(({ value, icon }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setEventAlign(value)}
-                      className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border text-[15px] transition-all duration-150 active:scale-90 ${
-                        eventAlign === value
-                          ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'
-                          : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)]'
-                      }`}
-                    >
-                      {icon}
-                    </button>
-                  ))}
+                  {(Object.keys(EVENT_ALIGN_ROTATIONS) as EventAlign[]).map((value) => {
+                    const rotation = EVENT_ALIGN_ROTATIONS[value];
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setEventAlign(value)}
+                        className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border transition-all duration-150 active:scale-90 ${
+                          eventAlign === value
+                            ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'
+                            : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)]'
+                        }`}
+                      >
+                        {rotation === 'dot' ? (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="8" r="3.5" />
+                          </svg>
+                        ) : (
+                          <svg
+                            width="16" height="16" viewBox="0 0 16 16" fill="none"
+                            stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ transform: `rotate(${rotation}deg)` }}
+                          >
+                            <line x1="8" y1="13" x2="8" y2="3" />
+                            <polyline points="3 8 8 3 13 8" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

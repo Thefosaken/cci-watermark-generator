@@ -237,7 +237,7 @@ function getEventLogoPosition(
   logoHeight: number,
   align?: EventAlign
 ): { x: number; y: number } {
-  const padding = 20;
+  const padding = 8;
   const innerX = rectX + padding;
   const innerY = rectY + padding;
   const innerW = rectWidth - padding * 2;

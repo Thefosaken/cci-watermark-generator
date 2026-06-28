@@ -213,11 +213,9 @@ function drawEventLogo(
   const finalWidth = baseWidth * scale;
   const finalHeight = baseHeight * scale;
 
-  const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, payload.eventAlign as EventAlign);
-  const logoX = position.x - (finalWidth / 2);
-  const logoY = position.y - (finalHeight / 2);
+  const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, finalWidth, finalHeight, payload.eventAlign as EventAlign);
 
-  ctx.drawImage(eventLogo, logoX, logoY, finalWidth, finalHeight);
+  ctx.drawImage(eventLogo, position.x, position.y, finalWidth, finalHeight);
 }
 
 export async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -235,48 +233,51 @@ function getEventLogoPosition(
   rectY: number,
   rectWidth: number,
   rectHeight: number,
+  logoWidth: number,
+  logoHeight: number,
   align?: EventAlign
 ): { x: number; y: number } {
+  const padding = 20;
+  const innerX = rectX + padding;
+  const innerY = rectY + padding;
+  const innerW = rectWidth - padding * 2;
+  const innerH = rectHeight - padding * 2;
+
   if (!align || align === 'center-center') {
     return {
-      x: rectX + rectWidth / 2,
-      y: rectY + rectHeight / 2,
+      x: innerX + (innerW - logoWidth) / 2,
+      y: innerY + (innerH - logoHeight) / 2,
     };
   }
 
-  const paddedRectX = rectX + 20;
-  const paddedRectY = rectY + 20;
-  const paddedRectWidth = rectWidth - 40;
-  const paddedRectHeight = rectHeight - 40;
-
   switch (align) {
     case 'top-left':
-      return { x: paddedRectX, y: paddedRectY };
+      return { x: innerX, y: innerY };
     case 'top-center':
-      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY };
+      return { x: innerX + (innerW - logoWidth) / 2, y: innerY };
     case 'top-right':
-      return { x: paddedRectX + paddedRectWidth, y: paddedRectY };
+      return { x: innerX + innerW - logoWidth, y: innerY };
     case 'center-left':
-      return { x: paddedRectX, y: paddedRectY + paddedRectHeight / 2 };
+      return { x: innerX, y: innerY + (innerH - logoHeight) / 2 };
     case 'right':
     case 'center-right':
-      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight / 2 };
+      return { x: innerX + innerW - logoWidth, y: innerY + (innerH - logoHeight) / 2 };
     case 'bottom-left':
-      return { x: paddedRectX, y: paddedRectY + paddedRectHeight };
+      return { x: innerX, y: innerY + innerH - logoHeight };
     case 'bottom-center':
-      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY + paddedRectHeight };
+      return { x: innerX + (innerW - logoWidth) / 2, y: innerY + innerH - logoHeight };
     case 'bottom-right':
-      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight };
+      return { x: innerX + innerW - logoWidth, y: innerY + innerH - logoHeight };
     case 'left':
-      return { x: paddedRectX, y: paddedRectY + paddedRectHeight / 2 };
+      return { x: innerX, y: innerY + (innerH - logoHeight) / 2 };
     case 'top':
-      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY };
+      return { x: innerX + (innerW - logoWidth) / 2, y: innerY };
     case 'bottom':
-      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY + paddedRectHeight };
+      return { x: innerX + (innerW - logoWidth) / 2, y: innerY + innerH - logoHeight };
     default:
       return {
-        x: rectX + rectWidth / 2,
-        y: rectY + rectHeight / 2,
+        x: innerX + (innerW - logoWidth) / 2,
+        y: innerY + (innerH - logoHeight) / 2,
       };
   }
 }

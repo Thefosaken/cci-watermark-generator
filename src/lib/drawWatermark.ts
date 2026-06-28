@@ -269,8 +269,6 @@ function getEventLogoPosition(
       return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight };
     case 'left':
       return { x: paddedRectX, y: paddedRectY + paddedRectHeight / 2 };
-    case 'right':
-      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight / 2 };
     case 'top':
       return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY };
     case 'bottom':

@@ -229,7 +229,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale, eventBgImage]);
+  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -348,6 +348,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               eventBgColor,
               eventLogoScale,
               isCellChurch,
+              eventAlign,
             };
 
             const [portrait, landscape] = await Promise.all([
@@ -484,7 +485,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
             }
 
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -739,7 +740,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const results = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -884,30 +885,30 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo Position</label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Logo Position</label>
+                <div className="grid grid-cols-3 gap-1 w-fit mx-auto">
                   {[
-                    { value: 'top-left', label: 'TL' },
-                    { value: 'top-center', label: 'TC' },
-                    { value: 'top-right', label: 'TR' },
-                    { value: 'center-left', label: 'CL' },
-                    { value: 'center-center', label: 'CC' },
-                    { value: 'center-right', label: 'CR' },
-                    { value: 'bottom-left', label: 'BL' },
-                    { value: 'bottom-center', label: 'BC' },
-                    { value: 'bottom-right', label: 'BR' },
-                  ].map(({ value, label }) => (
+                    { value: 'top-left' as const, icon: '↖' },
+                    { value: 'top-center' as const, icon: '↑' },
+                    { value: 'top-right' as const, icon: '↗' },
+                    { value: 'center-left' as const, icon: '←' },
+                    { value: 'center-center' as const, icon: '●' },
+                    { value: 'center-right' as const, icon: '→' },
+                    { value: 'bottom-left' as const, icon: '↙' },
+                    { value: 'bottom-center' as const, icon: '↓' },
+                    { value: 'bottom-right' as const, icon: '↘' },
+                  ].map(({ value, icon }) => (
                     <button
                       key={value}
                       type="button"
-                      onClick={() => setEventAlign(value as EventAlign)}
-                      className={`py-1.5 text-[11px] font-medium rounded-[6px] border transition-all ${
+                      onClick={() => setEventAlign(value)}
+                      className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border text-[15px] transition-all duration-150 active:scale-90 ${
                         eventAlign === value
-                          ? 'bg-[var(--surface-subtle)] border-[var(--brand-red)] text-[var(--text)]'
-                          : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)]'
+                          ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'
+                          : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)]'
                       }`}
                     >
-                      {label}
+                      {icon}
                     </button>
                   ))}
                 </div>

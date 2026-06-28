@@ -48,6 +48,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [docPortraitPreview, setDocPortraitPreview] = useState<string | null>(null);
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
   const [eventAlign, setEventAlign] = useState<EventAlign>('center-center');
+  const [eventPreviewTick, setEventPreviewTick] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
@@ -242,7 +243,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign]);
+  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -906,7 +907,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       <button
                         key={value}
                         type="button"
-                        onClick={() => setEventAlign(value)}
+                        onClick={() => { setEventAlign(value); setEventPreviewTick(t => t + 1); }}
                         className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border transition-all duration-150 active:scale-90 ${
                           eventAlign === value
                             ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'

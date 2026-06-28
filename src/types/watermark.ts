@@ -23,6 +23,13 @@ export interface CellChurch {
   active: boolean;
 }
 
+export type EventAlign = 
+  | 'top-left' | 'top-center' | 'top-right'
+  | 'center-left' | 'center-center' | 'center-right'
+  | 'bottom-left' | 'bottom-center' | 'bottom-right'
+  | 'left' | 'center' | 'right'
+  | 'top' | 'bottom';
+
 export interface WatermarkPayload {
   serviceType: ServiceType;
   topic: string;
@@ -33,6 +40,7 @@ export interface WatermarkPayload {
   eventBgColor?: string;
   eventLogoScale?: number;
   isCellChurch?: boolean;
+  eventAlign?: EventAlign;
 }
 
 export interface WatermarkRenderResult {

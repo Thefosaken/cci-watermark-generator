@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ServiceType, Campus, CellChurch, WatermarkPayload, OrganizationType } from '@/types/watermark';
+import { ServiceType, Campus, CellChurch, WatermarkPayload, OrganizationType, EventAlign } from '@/types/watermark';
 import { ServiceTypeSelector } from './ServiceTypeSelector';
 import { CampusSelector } from './CampusSelector';
 import { renderWatermark, renderDocumentaryWatermark, loadImage } from '@/lib/drawWatermark';
@@ -35,6 +35,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [landscapePreview, setLandscapePreview] = useState<string | null>(null);
   const [docPortraitPreview, setDocPortraitPreview] = useState<string | null>(null);
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
+  const [eventAlign, setEventAlign] = useState<EventAlign>('top-center');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);

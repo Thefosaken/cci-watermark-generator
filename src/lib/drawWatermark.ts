@@ -1,4 +1,4 @@
-import { WatermarkPayload } from '@/types/watermark';
+import { WatermarkPayload, EventAlign } from '@/types/watermark';
 import { DESIGN_TOKENS, LAYOUTS, EVENT_LAYOUTS, SERVICE_LABELS, DOCUMENTARY_LAYOUTS, DOCUMENTARY_SERVICE_LABELS } from './designTokens';
 import { fitTextToWidth } from './fitText';
 
@@ -213,8 +213,9 @@ function drawEventLogo(
   const finalWidth = baseWidth * scale;
   const finalHeight = baseHeight * scale;
 
-  const logoX = rectX + (rectWidth / 2) - (finalWidth / 2);
-  const logoY = rectY + (rectHeight / 2) - (finalHeight / 2);
+  const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, payload.eventAlign as EventAlign);
+  const logoX = position.x - (finalWidth / 2);
+  const logoY = position.y - (finalHeight / 2);
 
   ctx.drawImage(eventLogo, logoX, logoY, finalWidth, finalHeight);
 }
@@ -227,6 +228,59 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+function getEventLogoPosition(
+  rectX: number,
+  rectY: number,
+  rectWidth: number,
+  rectHeight: number,
+  align?: EventAlign
+): { x: number; y: number } {
+  if (!align || align === 'center-center') {
+    return {
+      x: rectX + rectWidth / 2,
+      y: rectY + rectHeight / 2,
+    };
+  }
+
+  const paddedRectX = rectX + 20;
+  const paddedRectY = rectY + 20;
+  const paddedRectWidth = rectWidth - 40;
+  const paddedRectHeight = rectHeight - 40;
+
+  switch (align) {
+    case 'top-left':
+      return { x: paddedRectX, y: paddedRectY };
+    case 'top-center':
+      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY };
+    case 'top-right':
+      return { x: paddedRectX + paddedRectWidth, y: paddedRectY };
+    case 'center-left':
+      return { x: paddedRectX, y: paddedRectY + paddedRectHeight / 2 };
+    case 'right':
+    case 'center-right':
+      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight / 2 };
+    case 'bottom-left':
+      return { x: paddedRectX, y: paddedRectY + paddedRectHeight };
+    case 'bottom-center':
+      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY + paddedRectHeight };
+    case 'bottom-right':
+      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight };
+    case 'left':
+      return { x: paddedRectX, y: paddedRectY + paddedRectHeight / 2 };
+    case 'right':
+      return { x: paddedRectX + paddedRectWidth, y: paddedRectY + paddedRectHeight / 2 };
+    case 'top':
+      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY };
+    case 'bottom':
+      return { x: paddedRectX + paddedRectWidth / 2, y: paddedRectY + paddedRectHeight };
+    default:
+      return {
+        x: rectX + rectWidth / 2,
+        y: rectY + rectHeight / 2,
+      };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

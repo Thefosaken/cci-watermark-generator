@@ -883,6 +883,36 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Event Logo Position</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { value: 'top-left', label: 'TL' },
+                    { value: 'top-center', label: 'TC' },
+                    { value: 'top-right', label: 'TR' },
+                    { value: 'center-left', label: 'CL' },
+                    { value: 'center-center', label: 'CC' },
+                    { value: 'center-right', label: 'CR' },
+                    { value: 'bottom-left', label: 'BL' },
+                    { value: 'bottom-center', label: 'BC' },
+                    { value: 'bottom-right', label: 'BR' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setEventAlign(value as EventAlign)}
+                      className={`py-1.5 text-[11px] font-medium rounded-[6px] border transition-all ${
+                        eventAlign === value
+                          ? 'bg-[var(--surface-subtle)] border-[var(--brand-red)] text-[var(--text)]'
+                          : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 relative">
                   <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>

@@ -21,6 +21,13 @@
     "active": true
   },
   {
+    "id": "awka",
+    "name": "Awka",
+    "cityLabel": "AWKA",
+    "address": "Awka Cell Church, Anambra, Nigeria",
+    "active": true
+  },
+  {
     "id": "bonny-island",
     "name": "Bonny Island",
     "cityLabel": "BONNY ISLAND",

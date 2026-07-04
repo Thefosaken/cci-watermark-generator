@@ -241,7 +241,9 @@ function drawEventLogo(
     ctx.rect(rectX, rectY, rectWidth, rectHeight);
   }
   ctx.clip();
-  ctx.drawImage(eventLogo, position.x, position.y, finalWidth, finalHeight);
+  const offsetX = payload.eventLogoOffsetX || 0;
+  const offsetY = payload.eventLogoOffsetY || 0;
+  ctx.drawImage(eventLogo, position.x + offsetX, position.y + offsetY, finalWidth, finalHeight);
   ctx.restore();
 }
 

@@ -43,6 +43,8 @@ export interface WatermarkPayload {
   eventAlign?: EventAlign;
   eventBoxColor?: string;
   eventUnclipTop?: boolean;
+  eventLogoOffsetX?: number;
+  eventLogoOffsetY?: number;
 }
 
 export interface WatermarkRenderResult {

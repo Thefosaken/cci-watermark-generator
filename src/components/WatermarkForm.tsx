@@ -50,6 +50,9 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [eventAlign, setEventAlign] = useState<EventAlign>('center-center');
   const [eventBoxColor, setEventBoxColor] = useState('#d71921');
   const [eventUnclipTop, setEventUnclipTop] = useState(false);
+  const [eventLogoOffsetX, setEventLogoOffsetX] = useState(0);
+  const [eventLogoOffsetY, setEventLogoOffsetY] = useState(0);
+  const NUDGE_STEP = 5;
   const [eventPreviewTick, setEventPreviewTick] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +172,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         eventAlign,
         eventBoxColor,
         eventUnclipTop,
+        eventLogoOffsetX,
+        eventLogoOffsetY,
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -247,7 +252,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventUnclipTop]);
+  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -369,6 +374,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               eventAlign,
               eventBoxColor,
               eventUnclipTop,
+              eventLogoOffsetX,
+              eventLogoOffsetY,
             };
 
             const [portrait, landscape] = await Promise.all([
@@ -505,7 +512,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
             }
 
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -672,7 +679,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const batchResults = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
+            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -760,7 +767,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const results = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -906,38 +913,109 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
               <div className="space-y-2">
                 <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Logo Position</label>
-                <div className="grid grid-cols-3 gap-1 w-fit mx-auto">
-                  {(Object.keys(EVENT_ALIGN_ROTATIONS) as EventAlign[]).map((value) => {
-                    const rotation = EVENT_ALIGN_ROTATIONS[value];
-                    return (
+                <div className="flex items-start gap-3 justify-center">
+                  <div className="grid grid-cols-3 gap-1">
+                    {(Object.keys(EVENT_ALIGN_ROTATIONS) as EventAlign[]).map((value) => {
+                      const rotation = EVENT_ALIGN_ROTATIONS[value];
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => { setEventAlign(value); setEventPreviewTick(t => t + 1); }}
+                          className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border transition-all duration-150 active:scale-90 ${
+                            eventAlign === value
+                              ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'
+                              : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)]'
+                          }`}
+                        >
+                          {rotation === 'dot' ? (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="8" r="3.5" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="16" height="16" viewBox="0 0 16 16" fill="none"
+                              stroke="currentColor" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round"
+                              style={{ transform: `rotate(${rotation}deg)` }}
+                            >
+                              <line x1="8" y1="13" x2="8" y2="3" />
+                              <polyline points="3 8 8 3 13 8" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-0.5">
+                      <div className="w-[30px]" />
                       <button
-                        key={value}
                         type="button"
-                        onClick={() => { setEventAlign(value); setEventPreviewTick(t => t + 1); }}
-                        className={`relative w-10 h-10 flex items-center justify-center rounded-[8px] border transition-all duration-150 active:scale-90 ${
-                          eventAlign === value
-                            ? 'bg-[var(--brand-red)] border-[var(--brand-red)] text-white shadow-[0_0_0_2px_var(--brand-red)_inset]'
-                            : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] hover:bg-[var(--surface-subtle)]'
-                        }`}
+                        onClick={() => { setEventLogoOffsetY(y => y - NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
+                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        title="Nudge up"
                       >
-                        {rotation === 'dot' ? (
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <circle cx="8" cy="8" r="3.5" />
-                          </svg>
-                        ) : (
-                          <svg
-                            width="16" height="16" viewBox="0 0 16 16" fill="none"
-                            stroke="currentColor" strokeWidth="2"
-                            strokeLinecap="round" strokeLinejoin="round"
-                            style={{ transform: `rotate(${rotation}deg)` }}
-                          >
-                            <line x1="8" y1="13" x2="8" y2="3" />
-                            <polyline points="3 8 8 3 13 8" />
-                          </svg>
-                        )}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="18 15 12 9 6 15" />
+                        </svg>
                       </button>
-                    );
-                  })}
+                      <div className="w-[30px]" />
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => { setEventLogoOffsetX(x => x - NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
+                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        title="Nudge left"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEventLogoOffsetX(0); setEventLogoOffsetY(0); setEventPreviewTick(t => t + 1); }}
+                        disabled={eventLogoOffsetX === 0 && eventLogoOffsetY === 0}
+                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                        title="Reset offset"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="8" x2="12" y2="12"/>
+                          <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEventLogoOffsetX(x => x + NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
+                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        title="Nudge right"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <div className="w-[30px]" />
+                      <button
+                        type="button"
+                        onClick={() => { setEventLogoOffsetY(y => y + NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
+                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        title="Nudge down"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
+                      <div className="w-[30px]" />
+                    </div>
+                    <div className="text-[10px] text-[var(--text-faint)] mt-0.5 font-mono">
+                      {eventLogoOffsetX},{eventLogoOffsetY}
+                    </div>
+                  </div>
                 </div>
               </div>
 

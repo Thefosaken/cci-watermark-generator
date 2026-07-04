@@ -948,7 +948,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     })}
                   </div>
 
-                  <div className="flex flex-col items-center gap-px p-[7px] bg-[var(--surface)] border border-[var(--border)] rounded-[10px] shadow-sm">
+                  <div className="flex flex-col items-center gap-px p-[7px] bg-[var(--surface)] border border-[var(--border)] rounded-[10px]">
                     <div className="flex items-center gap-px">
                       <div className="w-[36px]" />
                       <button

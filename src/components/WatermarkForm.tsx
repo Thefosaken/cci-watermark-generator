@@ -913,7 +913,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
               <div className="space-y-2">
                 <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Logo Position</label>
-                <div className="flex items-start gap-3 justify-center">
+                <div className="flex items-center gap-4 justify-center">
                   <div className="grid grid-cols-3 gap-1">
                     {(Object.keys(EVENT_ALIGN_ROTATIONS) as EventAlign[]).map((value) => {
                       const rotation = EVENT_ALIGN_ROTATIONS[value];
@@ -948,29 +948,29 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     })}
                   </div>
 
-                  <div className="flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-0.5">
-                      <div className="w-[30px]" />
+                  <div className="flex flex-col items-center gap-px p-[7px] bg-[var(--surface)] border border-[var(--border)] rounded-[10px] shadow-sm">
+                    <div className="flex items-center gap-px">
+                      <div className="w-[36px]" />
                       <button
                         type="button"
                         onClick={() => { setEventLogoOffsetY(y => y - NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
-                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        className="w-[36px] h-[36px] flex items-center justify-center rounded-[7px] border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
                         title="Nudge up"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="18 15 12 9 6 15" />
                         </svg>
                       </button>
-                      <div className="w-[30px]" />
+                      <div className="w-[36px]" />
                     </div>
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-px">
                       <button
                         type="button"
                         onClick={() => { setEventLogoOffsetX(x => x - NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
-                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        className="w-[36px] h-[36px] flex items-center justify-center rounded-[7px] border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
                         title="Nudge left"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="15 18 9 12 15 6" />
                         </svg>
                       </button>
@@ -978,10 +978,10 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                         type="button"
                         onClick={() => { setEventLogoOffsetX(0); setEventLogoOffsetY(0); setEventPreviewTick(t => t + 1); }}
                         disabled={eventLogoOffsetX === 0 && eventLogoOffsetY === 0}
-                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+                        className="w-[36px] h-[36px] flex items-center justify-center rounded-[7px] border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all disabled:opacity-25 disabled:pointer-events-none"
                         title="Reset offset"
                       >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="12" cy="12" r="10"/>
                           <line x1="12" y1="8" x2="12" y2="12"/>
                           <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -990,29 +990,29 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       <button
                         type="button"
                         onClick={() => { setEventLogoOffsetX(x => x + NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
-                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        className="w-[36px] h-[36px] flex items-center justify-center rounded-[7px] border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
                         title="Nudge right"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="9 18 15 12 9 6" />
                         </svg>
                       </button>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <div className="w-[30px]" />
+                    <div className="flex items-center gap-px">
+                      <div className="w-[36px]" />
                       <button
                         type="button"
                         onClick={() => { setEventLogoOffsetY(y => y + NUDGE_STEP); setEventPreviewTick(t => t + 1); }}
-                        className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
+                        className="w-[36px] h-[36px] flex items-center justify-center rounded-[7px] border border-[var(--border)] bg-[var(--surface-subtle)] text-[var(--text-muted)] hover:border-[var(--brand-red)] hover:text-[var(--text)] active:scale-90 transition-all"
                         title="Nudge down"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="6 9 12 15 18 9" />
                         </svg>
                       </button>
-                      <div className="w-[30px]" />
+                      <div className="w-[36px]" />
                     </div>
-                    <div className="text-[10px] text-[var(--text-faint)] mt-0.5 font-mono">
+                    <div className="text-[10px] text-[var(--text-faint)] mt-px font-mono leading-none">
                       {eventLogoOffsetX},{eventLogoOffsetY}
                     </div>
                   </div>

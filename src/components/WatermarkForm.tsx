@@ -49,7 +49,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
   const [eventAlign, setEventAlign] = useState<EventAlign>('center-center');
   const [eventBoxColor, setEventBoxColor] = useState('#d71921');
-  const [eventClipTop, setEventClipTop] = useState(true);
+  const [eventUnclipTop, setEventUnclipTop] = useState(false);
   const [eventPreviewTick, setEventPreviewTick] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +168,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         isCellChurch: organizationType === 'cellChurch',
         eventAlign,
         eventBoxColor,
-        eventClipTop,
+        eventUnclipTop,
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -247,7 +247,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventClipTop]);
+  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventUnclipTop]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -368,7 +368,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               isCellChurch,
               eventAlign,
               eventBoxColor,
-              eventClipTop,
+              eventUnclipTop,
             };
 
             const [portrait, landscape] = await Promise.all([
@@ -505,7 +505,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
             }
 
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -672,7 +672,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const batchResults = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
+            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -760,7 +760,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const results = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -1151,19 +1151,19 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Clip Logo Container Top</span>
-                  <p className="text-[11px] text-[var(--text-faint)] mt-0.5">When off, logo can extend above the container top edge</p>
+                  <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Unclip Top</span>
+                  <p className="text-[11px] text-[var(--text-faint)] mt-0.5">When on, logo can extend above the container top edge</p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setEventClipTop(!eventClipTop)}
+                  onClick={() => setEventUnclipTop(!eventUnclipTop)}
                   className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                    eventClipTop ? 'bg-[var(--brand-red)]' : 'bg-[var(--border)]'
+                    eventUnclipTop ? 'bg-[var(--brand-red)]' : 'bg-[var(--border)]'
                   }`}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                      eventClipTop ? 'translate-x-5' : 'translate-x-0'
+                      eventUnclipTop ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>

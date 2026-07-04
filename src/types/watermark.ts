@@ -42,7 +42,7 @@ export interface WatermarkPayload {
   isCellChurch?: boolean;
   eventAlign?: EventAlign;
   eventBoxColor?: string;
-  eventClipTop?: boolean;
+  eventUnclipTop?: boolean;
 }
 
 export interface WatermarkRenderResult {

@@ -58,7 +58,7 @@ export async function renderWatermark(
   ctx.clearRect(0, 0, layout.width, layout.height);
 
   const tileColor = payload.eventBoxColor || DESIGN_TOKENS.colors.tileRed;
-  const clipTop = payload.eventClipTop !== false;
+  const unclipTop = payload.eventUnclipTop === true;
 
   drawBottomBar(ctx, layout, tileColor);
   drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch, tileColor);
@@ -66,7 +66,7 @@ export async function renderWatermark(
   drawAddressText(ctx, layout, payload.address);
 
   if (payload.serviceType === 'event') {
-    drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage, clipTop);
+    drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage, unclipTop);
   }
 
   const url = canvas.toDataURL('image/png');
@@ -163,7 +163,7 @@ function drawEventLogo(
   eventLogo: HTMLImageElement | undefined,
   payload: WatermarkPayload,
   eventBgImage?: HTMLImageElement,
-  clipTop: boolean = true
+  unclipTop: boolean = false
 ): void {
   // Event box: 174 × 81, sitting directly on top of the red tile (per design
   // spec). Width matches the tile; height is fixed at 81.
@@ -230,14 +230,14 @@ function drawEventLogo(
   const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, finalWidth, finalHeight, payload.eventAlign as EventAlign);
 
   // Clip the logo to the container so edge-aligned positions never bleed.
-  // When clipTop is false, only left, right, and bottom are clipped so the
-  // logo can extend above the container without being cut off at the top.
+  // When unclipTop is enabled, only left, right, and bottom are clipped so
+  // the logo can extend above the container without being cut off at the top.
   ctx.save();
   ctx.beginPath();
-  if (clipTop) {
-    ctx.rect(rectX, rectY, rectWidth, rectHeight);
+  if (unclipTop) {
+    ctx.rect(rectX, 0, rectWidth, rectY + rectHeight);
   } else {
-    ctx.rect(rectX, -99999, rectWidth, rectHeight + 99999);
+    ctx.rect(rectX, rectY, rectWidth, rectHeight);
   }
   ctx.clip();
   ctx.drawImage(eventLogo, position.x, position.y, finalWidth, finalHeight);

@@ -48,13 +48,15 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [docPortraitPreview, setDocPortraitPreview] = useState<string | null>(null);
   const [docLandscapePreview, setDocLandscapePreview] = useState<string | null>(null);
   const [eventAlign, setEventAlign] = useState<EventAlign>('center-center');
+  const [eventBoxColor, setEventBoxColor] = useState('#d71921');
+  const [eventClipTop, setEventClipTop] = useState(true);
   const [eventPreviewTick, setEventPreviewTick] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState<false | 'bg' | 'box'>(false);
   const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, campusName: '' });
@@ -165,6 +167,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         eventLogoScale,
         isCellChurch: organizationType === 'cellChurch',
         eventAlign,
+        eventBoxColor,
+        eventClipTop,
       };
 
       let evtImg: HTMLImageElement | undefined;
@@ -243,7 +247,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick]);
+  }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventClipTop]);
 
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
@@ -363,6 +367,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               eventLogoScale,
               isCellChurch,
               eventAlign,
+              eventBoxColor,
+              eventClipTop,
             };
 
             const [portrait, landscape] = await Promise.all([
@@ -499,7 +505,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
               else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
             }
 
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -666,7 +672,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const batchResults = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
+            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -754,7 +760,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         const results = await Promise.all(
           batch.map(async (org) => {
             const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign };
+            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventClipTop };
             const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
             const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
             let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
@@ -935,13 +941,107 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                 </div>
               </div>
 
+              <div className="space-y-2 relative">
+                <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Box & Strip Color</label>
+                <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => setShowColorPicker(showColorPicker ? false : 'box')}
+                    className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner cursor-pointer hover:scale-105 transition-transform"
+                    style={{ backgroundColor: eventBoxColor }}
+                    title="Open box colour picker"
+                    aria-label="Open box colour picker"
+                  />
+                  <input
+                    type="text"
+                    value={eventBoxColor}
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      val = val.startsWith('#') ? val.slice(1) : val;
+                      val = val.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+                      setEventBoxColor('#' + val);
+                    }}
+                    className="flex-1 min-w-0 bg-transparent text-[13px] text-[var(--text)] uppercase font-medium focus:outline-none"
+                    spellCheck={false}
+                    maxLength={7}
+                  />
+                </div>
+
+                {showColorPicker === 'box' && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => { setShowColorPicker(false); setShowAdvancedPicker(false); }}></div>
+                    <div className="absolute left-0 top-[calc(100%+8px)] z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-max animate-in fade-in zoom-in-95 duration-200">
+                      {showAdvancedPicker ? (
+                        <div className="flex flex-col gap-3">
+                          <ChromePicker
+                            color={eventBoxColor}
+                            onChange={(color) => setEventBoxColor(color.hex)}
+                            disableAlpha={true}
+                            styles={{ default: { picker: { boxShadow: 'none', background: 'transparent', width: '200px' } } }}
+                          />
+                          <button
+                            onClick={() => setShowAdvancedPicker(false)}
+                            className="w-full py-1.5 text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                          >
+                            Back to Presets
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-5 gap-2 mb-3 w-[196px]">
+                            {PRESET_COLORS.map(c => (
+                              <button
+                                key={c}
+                                onClick={() => { setEventBoxColor(c); setShowColorPicker(false); }}
+                                className={`w-full aspect-square rounded-[6px] border ${eventBoxColor.toLowerCase() === c.toLowerCase() ? 'border-[var(--brand-red)] ring-2 ring-[var(--brand-red)]/20' : 'border-[var(--border)]'} shadow-inner hover:scale-105 active:scale-95 transition-all`}
+                                style={{ backgroundColor: c }}
+                                title={c}
+                              />
+                            ))}
+                            <button
+                              onClick={() => setShowAdvancedPicker(true)}
+                              className="relative w-full aspect-square rounded-[6px] cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center overflow-hidden border border-[var(--border)] shadow-inner"
+                              title="Custom Color"
+                            >
+                              <div className="absolute inset-0 pointer-events-none" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}></div>
+                              <div className="absolute inset-[3px] bg-[var(--surface)] rounded-full flex items-center justify-center shadow-sm pointer-events-none">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text)]">
+                                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                              </div>
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2 w-[196px]">
+                            <span className="text-[12px] text-[var(--text-muted)] font-medium">HEX</span>
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text-muted)]">#</span>
+                              <input
+                                type="text"
+                                value={eventBoxColor.replace('#', '')}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+                                  setEventBoxColor(`#${val}`);
+                                }}
+                                className="w-full h-8 pl-5 pr-2 text-[13px] uppercase bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[6px] focus:outline-none focus:border-[var(--brand-red)] transition-colors"
+                                placeholder="d71921"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 relative">
                   <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Background</label>
                   <div className="flex items-center gap-3 h-11 px-3 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-colors">
                     <button
                       type="button"
-                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      onClick={() => setShowColorPicker(showColorPicker === 'bg' ? false : 'bg')}
                       className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex-shrink-0 shadow-inner cursor-pointer hover:scale-105 transition-transform"
                       style={{ backgroundColor: eventBgColor }}
                       title="Open colour picker"
@@ -962,7 +1062,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     />
                   </div>
 
-                  {showColorPicker && (
+                  {showColorPicker === 'bg' && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => { setShowColorPicker(false); setShowAdvancedPicker(false); }}></div>
                       <div className="absolute left-0 top-[calc(100%+8px)] z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-max animate-in fade-in zoom-in-95 duration-200">
@@ -1047,6 +1147,26 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <span className="text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Clip Logo Container Top</span>
+                  <p className="text-[11px] text-[var(--text-faint)] mt-0.5">When off, logo can extend above the container top edge</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEventClipTop(!eventClipTop)}
+                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                    eventClipTop ? 'bg-[var(--brand-red)]' : 'bg-[var(--border)]'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      eventClipTop ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
               <div className="space-y-2">

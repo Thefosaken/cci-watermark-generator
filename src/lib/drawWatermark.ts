@@ -22,6 +22,14 @@ interface LayoutConfig {
   cityFontSize: number;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export async function renderWatermark(
   payload: WatermarkPayload,
   orientation: Orientation,
@@ -49,26 +57,30 @@ export async function renderWatermark(
 
   ctx.clearRect(0, 0, layout.width, layout.height);
 
-  drawBottomBar(ctx, layout);
-  drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch);
+  const tileColor = payload.eventBoxColor || DESIGN_TOKENS.colors.tileRed;
+  const clipTop = payload.eventClipTop !== false;
+
+  drawBottomBar(ctx, layout, tileColor);
+  drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch, tileColor);
   drawServiceText(ctx, layout, payload.serviceType, payload.topic);
   drawAddressText(ctx, layout, payload.address);
 
   if (payload.serviceType === 'event') {
-    drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage);
+    drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage, clipTop);
   }
 
   const url = canvas.toDataURL('image/png');
   return { canvas, url };
 }
 
-function drawBottomBar(ctx: CanvasRenderingContext2D, layout: LayoutConfig): void {
+function drawBottomBar(ctx: CanvasRenderingContext2D, layout: LayoutConfig, tileColor?: string): void {
   // Background strip - black at 50% opacity
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
   ctx.fillRect(0, layout.barY, layout.width, layout.barHeight);
   
-  // Foreground strip - red at 50% opacity
-  ctx.fillStyle = 'rgba(197, 50, 45, 0.5)';
+  // Foreground strip - tile color at 50% opacity
+  const barColor = tileColor || DESIGN_TOKENS.colors.tileRed;
+  ctx.fillStyle = hexToRgba(barColor, 0.5);
   ctx.fillRect(0, layout.barY, layout.width, layout.barHeight);
 }
 
@@ -77,9 +89,10 @@ function drawCentralTile(
   layout: LayoutConfig,
   cityLabel: string,
   logoImage: HTMLImageElement,
-  isCellChurch?: boolean
+  isCellChurch?: boolean,
+  tileColor?: string
 ): void {
-  ctx.fillStyle = DESIGN_TOKENS.colors.tileRed;
+  ctx.fillStyle = tileColor || DESIGN_TOKENS.colors.tileRed;
   ctx.fillRect(layout.tileX, layout.tileY, layout.tileWidth, layout.tileVisibleHeight);
 
   const tileCenterX = layout.tileX + layout.tileWidth / 2;
@@ -149,7 +162,8 @@ function drawEventLogo(
   layout: LayoutConfig,
   eventLogo: HTMLImageElement | undefined,
   payload: WatermarkPayload,
-  eventBgImage?: HTMLImageElement
+  eventBgImage?: HTMLImageElement,
+  clipTop: boolean = true
 ): void {
   // Event box: 174 × 81, sitting directly on top of the red tile (per design
   // spec). Width matches the tile; height is fixed at 81.
@@ -215,10 +229,16 @@ function drawEventLogo(
 
   const position = getEventLogoPosition(rectX, rectY, rectWidth, rectHeight, finalWidth, finalHeight, payload.eventAlign as EventAlign);
 
-  // Clip the logo to the container so edge-aligned positions never bleed
+  // Clip the logo to the container so edge-aligned positions never bleed.
+  // When clipTop is false, only left, right, and bottom are clipped so the
+  // logo can extend above the container without being cut off at the top.
   ctx.save();
   ctx.beginPath();
-  ctx.rect(rectX, rectY, rectWidth, rectHeight);
+  if (clipTop) {
+    ctx.rect(rectX, rectY, rectWidth, rectHeight);
+  } else {
+    ctx.rect(rectX, -99999, rectWidth, rectHeight + 99999);
+  }
   ctx.clip();
   ctx.drawImage(eventLogo, position.x, position.y, finalWidth, finalHeight);
   ctx.restore();

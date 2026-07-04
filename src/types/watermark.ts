@@ -41,6 +41,8 @@ export interface WatermarkPayload {
   eventLogoScale?: number;
   isCellChurch?: boolean;
   eventAlign?: EventAlign;
+  eventBoxColor?: string;
+  eventClipTop?: boolean;
 }
 
 export interface WatermarkRenderResult {

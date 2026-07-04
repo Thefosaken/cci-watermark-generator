@@ -57,15 +57,16 @@ export async function renderWatermark(
 
   ctx.clearRect(0, 0, layout.width, layout.height);
 
-  const tileColor = payload.eventBoxColor || DESIGN_TOKENS.colors.tileRed;
-  const unclipTop = payload.eventUnclipTop === true;
+  const isEvent = payload.serviceType === 'event';
+  const tileColor = isEvent && payload.eventBoxColor ? payload.eventBoxColor : DESIGN_TOKENS.colors.tileRed;
+  const unclipTop = isEvent && payload.eventUnclipTop === true;
 
   drawBottomBar(ctx, layout, tileColor);
   drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch, tileColor);
   drawServiceText(ctx, layout, payload.serviceType, payload.topic);
   drawAddressText(ctx, layout, payload.address);
 
-  if (payload.serviceType === 'event') {
+  if (isEvent) {
     drawEventLogo(ctx, layout, eventLogoImage, payload, eventBgImage, unclipTop);
   }
 

@@ -35,6 +35,13 @@
     "active": true
   },
   {
+    "id": "chicago",
+    "name": "Chicago",
+    "cityLabel": "CHICAGO",
+    "address": "Chicago Cell Church, Illinois, USA",
+    "active": true
+  },
+  {
     "id": "ghana",
     "name": "Ghana",
     "cityLabel": "GHANA",
@@ -81,6 +88,13 @@
     "name": "Rwanda",
     "cityLabel": "RWANDA",
     "address": "Rwanda Cell Church, Kigali, Rwanda",
+    "active": true
+  },
+  {
+    "id": "sagamu",
+    "name": "Sagamu",
+    "cityLabel": "SAGAMU",
+    "address": "Sagamu Cell Church, Ogun, Nigeria",
     "active": true
   },
   {

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "aberdeen",
+    "name": "Aberdeen",
+    "cityLabel": "ABERDEEN",
+    "address": "Inchgarth Community Centre, AB10 7DR",
+    "active": true
+  },
+  {
+    "id": "belfast",
+    "name": "Belfast",
+    "cityLabel": "BELFAST",
+    "address": "381 Donegal Rd, BT12 6GR",
+    "active": true
+  },
+  {
+    "id": "berlin",
+    "name": "Berlin",
+    "cityLabel": "BERLIN",
+    "address": "A&O Berlin Mitte, Köpenicker Str. 127-129, 10179",
+    "active": true
+  },
+  {
+    "id": "middlesbrough",
+    "name": "Middlesbrough",
+    "cityLabel": "MIDDLESBROUGH",
+    "address": "Easterside Community Hub, TS4 3PZ",
+    "active": true
+  },
+  {
+    "id": "nottingham",
+    "name": "Nottingham",
+    "cityLabel": "NOTTINGHAM",
+    "address": "Nottingham Girls High School, NG1 4JB",
+    "active": true
+  },
+  {
+    "id": "peterborough",
+    "name": "Peterborough",
+    "cityLabel": "PETERBOROUGH",
+    "address": "Woodston Community Centre, PE2 9JD",
+    "active": true
+  },
+  {
+    "id": "sheffield",
+    "name": "Sheffield",
+    "cityLabel": "SHEFFIELD",
+    "address": "Farm Road Sports and Social Club, S2 2TP",
+    "active": true
+  },
+  {
+    "id": "swansea",
+    "name": "Swansea",
+    "cityLabel": "SWANSEA",
+    "address": "Dyfatty Community Centre, SA1 1NB",
+    "active": true
+  }
+]

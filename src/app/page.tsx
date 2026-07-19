@@ -1,7 +1,12 @@
 import campuses from '@/data/campuses.json';
 import cellChurches from '@/data/cellChurches.json';
+import cellChurchesInternational from '@/data/cellChurchesInternational.json';
 import { WatermarkForm } from '@/components/WatermarkForm';
 import { CciLogo } from '@/components/CciLogo';
+
+const allCellChurches = [...cellChurches, ...cellChurchesInternational].sort((a, b) =>
+  a.id.localeCompare(b.id),
+);
 
 export default function Home() {
   return (
@@ -24,7 +29,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1 w-full max-w-[1440px] mx-auto p-4 sm:p-6 md:p-8">
-        <WatermarkForm campuses={campuses} cellChurches={cellChurches} logoUrl="/cci-logo.svg" />
+        <WatermarkForm campuses={campuses} cellChurches={allCellChurches} logoUrl="/cci-logo.svg" />
       </main>
     </div>
   );

@@ -42,6 +42,13 @@
     "active": true
   },
   {
+    "id": "portlaoise",
+    "name": "Portlaoise",
+    "cityLabel": "PORTLAOISE",
+    "address": "Odeon Cinema, Screen 5, Portlaoise R32 V079",
+    "active": true
+  },
+  {
     "id": "sheffield",
     "name": "Sheffield",
     "cityLabel": "SHEFFIELD",

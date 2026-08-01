@@ -347,6 +347,18 @@
     "active": true
   },
   {
+    "id": "eleyele",
+    "name": "Eleyele",
+    "cityLabel": "ELEYELE",
+    "address": "Celebr8 Centre, Sango-Eleyele Road",
+    "sundayAddress": "Celebr8 Centre, Sango-Eleyele Road",
+    "midweekAddress": "Celebr8 Centre, Sango-Eleyele Road",
+    "hasMidweek": true,
+    "country": "Nigeria",
+    "region": "Oyo",
+    "active": true
+  },
+  {
     "id": "ibadan",
     "name": "Ibadan",
     "cityLabel": "IBADAN",
@@ -553,9 +565,9 @@
     "id": "ottawa",
     "name": "Ottawa",
     "cityLabel": "OTTAWA",
-    "address": "499 Preston Street, Ontario",
-    "sundayAddress": "499 Preston Street, Ontario",
-    "midweekAddress": "499 Preston Street, Ontario",
+    "address": "1558 Merivale Road, ON K2G 3J9",
+    "sundayAddress": "1558 Merivale Road, ON K2G 3J9",
+    "midweekAddress": "1558 Merivale Road, ON K2G 3J9",
     "country": "Canada",
     "region": "Ontario",
     "active": true
@@ -570,6 +582,18 @@
     "hasMidweek": true,
     "country": "Nigeria",
     "region": "Rivers",
+    "active": true
+  },
+  {
+    "id": "ring-road",
+    "name": "Ring Road",
+    "cityLabel": "RING ROAD",
+    "address": "Mauve 21 events centre, MKO Abiola Way",
+    "sundayAddress": "Mauve 21 events centre, MKO Abiola Way",
+    "midweekAddress": "Mauve 21 events centre, MKO Abiola Way",
+    "hasMidweek": true,
+    "country": "Nigeria",
+    "region": "Oyo",
     "active": true
   },
   {

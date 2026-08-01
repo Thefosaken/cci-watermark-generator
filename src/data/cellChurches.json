@@ -49,6 +49,13 @@
     "active": true
   },
   {
+    "id": "ijebu-ode",
+    "name": "Ijebu Ode",
+    "cityLabel": "IJEBU ODE",
+    "address": "Ijebu Ode Cell Church, Ogun, Nigeria",
+    "active": true
+  },
+  {
     "id": "ikot-ekpene",
     "name": "Ikot Ekpene",
     "cityLabel": "IKOT EKPENE",
@@ -67,6 +74,13 @@
     "name": "Kenya",
     "cityLabel": "KENYA",
     "address": "Kenya Cell Church, Nairobi, Kenya",
+    "active": true
+  },
+  {
+    "id": "lokoja",
+    "name": "Lokoja",
+    "cityLabel": "LOKOJA",
+    "address": "Lokoja Cell Church, Kogi, Nigeria",
     "active": true
   },
   {

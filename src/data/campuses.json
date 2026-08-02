@@ -416,6 +416,17 @@
     "active": true
   },
   {
+    "id": "jos",
+    "name": "Jos",
+    "cityLabel": "JOS",
+    "address": "Villa Grande Hotel, No 4 Kwang Road, Jos",
+    "sundayAddress": "Villa Grande Hotel, No 4 Kwang Road, Jos",
+    "midweekAddress": "Villa Grande Hotel, No 4 Kwang Road, Jos",
+    "country": "Nigeria",
+    "region": "Plateau",
+    "active": true
+  },
+  {
     "id": "kaduna",
     "name": "Kaduna",
     "cityLabel": "KADUNA",
@@ -424,6 +435,17 @@
     "midweekAddress": "Proview Event Centre, Barnawa",
     "country": "Nigeria",
     "region": "Kaduna",
+    "active": true
+  },
+  {
+    "id": "kubwa",
+    "name": "Kubwa",
+    "cityLabel": "KUBWA",
+    "address": "Blossom Forth Event Centre, Kubwa",
+    "sundayAddress": "Blossom Forth Event Centre, Kubwa",
+    "midweekAddress": "Blossom Forth Event Centre, Kubwa",
+    "country": "Nigeria",
+    "region": "FCT",
     "active": true
   },
   {

@@ -708,5 +708,16 @@
     "country": "Nigeria",
     "region": "Lagos",
     "active": true
+  },
+  {
+    "id": "yenagoa",
+    "name": "Yenagoa",
+    "cityLabel": "YENAGOA",
+    "address": "No.17 (A&B) Ididie Hotels Road, Ekeki",
+    "sundayAddress": "No.17 (A&B) Ididie Hotels Road, Ekeki",
+    "midweekAddress": "No.17 (A&B) Ididie Hotels Road, Ekeki",
+    "country": "Nigeria",
+    "region": "Bayelsa",
+    "active": true
   }
 ]

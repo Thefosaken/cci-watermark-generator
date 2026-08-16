@@ -28,6 +28,13 @@
     "active": true
   },
   {
+    "id": "bayelsa",
+    "name": "Bayelsa",
+    "cityLabel": "BAYELSA",
+    "address": "Bayelsa Cell Church, Bayelsa, Nigeria",
+    "active": true
+  },
+  {
     "id": "bonny-island",
     "name": "Bonny Island",
     "cityLabel": "BONNY ISLAND",

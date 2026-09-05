@@ -42,6 +42,13 @@
     "active": true
   },
   {
+    "id": "philippines",
+    "name": "Philippines",
+    "cityLabel": "PHILIPPINES",
+    "address": "ISL SWU PHINMA CEBU",
+    "active": true
+  },
+  {
     "id": "portlaoise",
     "name": "Portlaoise",
     "cityLabel": "PORTLAOISE",

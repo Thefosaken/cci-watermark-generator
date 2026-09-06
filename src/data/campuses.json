@@ -397,9 +397,9 @@
     "id": "ikorodu",
     "name": "Ikorodu",
     "cityLabel": "IKORODU",
-    "address": "Caritas Event Center, Ibeshe",
-    "sundayAddress": "Caritas Event Center, Ibeshe",
-    "midweekAddress": "Caritas Event Center, Ibeshe",
+    "address": "Aquila Event Center",
+    "sundayAddress": "Aquila Event Center",
+    "midweekAddress": "Aquila Event Center",
     "country": "Nigeria",
     "region": "Lagos",
     "active": true

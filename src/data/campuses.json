@@ -524,6 +524,7 @@
     "address": "Noble Vine Plaza, 182 NTA Road",
     "sundayAddress": "Noble Vine Plaza, 182 NTA Road",
     "midweekAddress": "Noble Vine Plaza, 182 NTA Road",
+    "hasMidweek": true,
     "country": "Nigeria",
     "region": "Rivers",
     "active": true

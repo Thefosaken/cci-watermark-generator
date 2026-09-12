@@ -21,6 +21,13 @@
     "active": true
   },
   {
+    "id": "malaysia",
+    "name": "Malaysia",
+    "cityLabel": "MALAYSIA",
+    "address": "M Centura, Sentul, Kuala Lumpur, Malaysia",
+    "active": true
+  },
+  {
     "id": "middlesbrough",
     "name": "Middlesbrough",
     "cityLabel": "MIDDLESBROUGH",
@@ -53,6 +60,13 @@
     "name": "Portlaoise",
     "cityLabel": "PORTLAOISE",
     "address": "Odeon Cinema, Screen 5, Portlaoise R32 V079",
+    "active": true
+  },
+  {
+    "id": "qatar",
+    "name": "Qatar",
+    "cityLabel": "QATAR",
+    "address": "The Eight, Downtown Doha, Qatar",
     "active": true
   },
   {

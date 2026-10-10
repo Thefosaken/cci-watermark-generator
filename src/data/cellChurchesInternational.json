@@ -7,6 +7,13 @@
     "active": true
   },
   {
+    "id": "austria",
+    "name": "Austria",
+    "cityLabel": "AUSTRIA",
+    "address": "Austria Cell Church, 1220, Vienna",
+    "active": true
+  },
+  {
     "id": "belfast",
     "name": "Belfast",
     "cityLabel": "BELFAST",
@@ -32,6 +39,13 @@
     "name": "Middlesbrough",
     "cityLabel": "MIDDLESBROUGH",
     "address": "Easterside Community Hub, TS4 3PZ",
+    "active": true
+  },
+  {
+    "id": "norwich",
+    "name": "Norwich",
+    "cityLabel": "NORWICH",
+    "address": "Norwich Cell Church, Norwich, UK",
     "active": true
   },
   {

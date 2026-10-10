@@ -154,11 +154,6 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     setSelectedCampus(null);
     setAddress('');
     setOrganizationType(newType);
-    // Cell Church has no "Special Event" tab — always land on Midweek when
-    // switching in, regardless of the previously selected service type.
-    if (newType === 'cellChurch') {
-      setServiceType('midweek');
-    }
   };
 
   const canGenerate = selectedCampus && topic.trim() && logoLoaded;

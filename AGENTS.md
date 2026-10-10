@@ -213,7 +213,7 @@ Per-session address overrides stored in `addressOverrides` state (keyed by org i
 - [ ] Text fits within allocated bounds
 - [ ] Documentary watermarks generate for campuses (not cell churches)
 - [ ] Special Event layout with custom logo/color/scale/clip/nudge renders correctly
-- [ ] Cell Church mode shows only Midweek/Sunday (no Event tab)
+- [ ] Special Event mode available for both campuses and cell churches
 - [ ] Custom box color does not affect Sunday/Midweek watermarks
 
 ---

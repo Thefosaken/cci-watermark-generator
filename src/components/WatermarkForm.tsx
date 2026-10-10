@@ -67,11 +67,15 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const [isUploadingToDrive, setIsUploadingToDrive] = useState(false);
   const [driveProgress, setDriveProgress] = useState({ current: 0, total: 0 });
   const [selectedCampusIds, setSelectedCampusIds] = useState<Set<string>>(new Set());
+  const [selectedCellChurchIds, setSelectedCellChurchIds] = useState<Set<string>>(new Set());
+  const [includeCellChurches, setIncludeCellChurches] = useState(false);
+  const [multiSelectTab, setMultiSelectTab] = useState<'campuses' | 'cellChurches'>('campuses');
   const [showMultiSelectModal, setShowMultiSelectModal] = useState<'zip' | 'drive' | null>(null);
   const [multiSelectSearch, setMultiSelectSearch] = useState('');
-  // Per-session manual address overrides for the multi-campus picker, keyed by
-  // org id. Holds only the campuses the user actually edited; reset on open.
+  // Per-session manual address & topic overrides for the multi-org picker, keyed by
+  // orgKey ('campus:id' or 'cell:id'). Holds only edited values; reset on open.
   const [addressOverrides, setAddressOverrides] = useState<Record<string, string>>({});
+  const [topicOverrides, setTopicOverrides] = useState<Record<string, string>>({});
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -110,6 +114,21 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [error]);
+
+  // Allow the multi-select modal to be dismissed with the Escape key.
+  useEffect(() => {
+    if (!showMultiSelectModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowMultiSelectModal(null);
+        setAddressOverrides({});
+        setTopicOverrides({});
+        setMultiSelectSearch('');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showMultiSelectModal]);
 
   // Reset the address field to the campus default whenever the campus or
   // service type changes. Adjusting state during render (React-recommended for
@@ -308,254 +327,6 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     saveAs(content, `${selectedCampus.name.replace(/\s/g, '')}-${topic.replace(/\s/g, '')}.zip`);
   };
 
-  const handleDownloadAllCampuses = async () => {
-    if (!topic.trim()) {
-      setError(`Please enter a topic before downloading all ${organizationType === 'cellChurch' ? 'cell churches' : 'campuses'}`);
-      return;
-    }
-
-    const isCellChurch = organizationType === 'cellChurch';
-    const activeOrganizations = isCellChurch
-      ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-      : campuses.filter((campus) => {
-          let addr = campus.address;
-          if (serviceType === 'midweek' && campus.midweekAddress) {
-            addr = campus.midweekAddress;
-          } else if (serviceType === 'sunday' && campus.sundayAddress) {
-            addr = campus.sundayAddress;
-          }
-          return campus.active && addr.trim();
-        });
-
-    if (activeOrganizations.length === 0) {
-      setError(`No ${isCellChurch ? 'cell churches' : 'campuses'} with valid addresses found`);
-      return;
-    }
-
-    setError(null);
-    setIsGeneratingAll(true);
-    setProgress({ current: 0, total: activeOrganizations.length, campusName: '' });
-
-    try {
-      if (!logoRef.current) {
-        throw new Error('Logo not loaded');
-      }
-
-      const { saveAs } = await import('file-saver');
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      const { evt, bg } = await loadEventAssets();
-
-      const BATCH_SIZE = 4;
-      for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
-        const batch = activeOrganizations.slice(i, Math.min(i + BATCH_SIZE, activeOrganizations.length));
-        setProgress({ current: i + 1, total: activeOrganizations.length, campusName: batch.map((c) => c.name).join(', ') });
-
-        const batchResults = await Promise.all(
-          batch.map(async (org) => {
-            let addr = org.address;
-            if (!isCellChurch) {
-              const campus = org as Campus;
-              if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-              else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-            }
-
-            const payload: WatermarkPayload = {
-              serviceType,
-              topic: topic.trim(),
-              campusName: org.name,
-              cityLabel: org.cityLabel,
-              address: addr.trim(),
-              eventLogoUrl: eventLogo || undefined,
-              eventBgColor,
-              eventLogoScale,
-              isCellChurch,
-              eventAlign,
-              eventBoxColor,
-              eventUnclipTop,
-              eventLogoOffsetX,
-              eventLogoOffsetY,
-            };
-
-            const [portrait, landscape] = await Promise.all([
-              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
-              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
-            ]);
-
-            const [pBlob, lBlob] = await Promise.all([
-              toBlob(portrait.canvas),
-              toBlob(landscape.canvas),
-            ]);
-
-            let dpBlob: Blob | null = null;
-            let dlBlob: Blob | null = null;
-
-            if (!isCellChurch) {
-              const [docPortrait, docLandscape] = await Promise.all([
-                renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-                renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
-              ]);
-              const [dp, dl] = await Promise.all([
-                toBlob(docPortrait.canvas),
-                toBlob(docLandscape.canvas),
-              ]);
-              dpBlob = dp;
-              dlBlob = dl;
-            }
-
-            return { org, pBlob, lBlob, dpBlob, dlBlob };
-          })
-        );
-
-        batchResults.forEach(({ org, pBlob, lBlob, dpBlob, dlBlob }) => {
-          const orgFolder = zip.folder(org.name);
-          const normalFolder = orgFolder?.folder('Service');
-          normalFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Portrait'), pBlob);
-          normalFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Landscape'), lBlob);
-          
-          if (dpBlob && dlBlob) {
-            const docFolder = orgFolder?.folder('Documentary');
-            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Portrait'), dpBlob);
-            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Landscape'), dlBlob);
-          }
-        });
-
-        setProgress({ current: i + batch.length, total: activeOrganizations.length, campusName: batch[batch.length - 1].name });
-      }
-
-      const content = await zip.generateAsync({ type: 'blob' });
-      const date = new Date().toISOString().split('T')[0];
-      const topicSlug = topic.trim().replace(/\s+/g, '-');
-      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
-      saveAs(content, `CCI_${orgSlug}_${topicSlug}_Watermark_${date}.zip`);
-    } catch (err) {
-      setError('Failed to generate all watermarks. Please try again.');
-      console.error(err);
-    } finally {
-      setIsGeneratingAll(false);
-      setShowDownloadMenu(false);
-    }
-  };
-
-  const handleDriveExportAll = async () => {
-    if (!topic.trim()) {
-      setError('Please enter a topic before exporting to Google Drive');
-      return;
-    }
-
-    const isCellChurch = organizationType === 'cellChurch';
-    const activeOrganizations = isCellChurch
-      ? cellChurches.filter((cc) => cc.active && cc.address.trim())
-      : campuses.filter((campus) => {
-          let addr = campus.address;
-          if (serviceType === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-          else if (serviceType === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-          return campus.active && addr.trim();
-        });
-
-    if (activeOrganizations.length === 0) {
-      setError(`No ${isCellChurch ? 'cell churches' : 'campuses'} with valid addresses found`);
-      return;
-    }
-
-    setError(null);
-    setIsGeneratingAll(true);
-
-    try {
-      const { clientId, apiKey } = getGoogleConfig();
-
-      const accessToken = await requestDriveToken(clientId);
-
-      setProgress({ current: 0, total: 0, campusName: 'Choose a destination folder...' });
-
-      let folderId: string;
-      try {
-        folderId = await showFolderPicker(accessToken, apiKey);
-      } catch (err) {
-        if (err instanceof DriveError && err.userCancelled) {
-          setError('Folder selection cancelled — export aborted.');
-        } else {
-          setError(err instanceof Error ? err.message : 'Could not open the Drive folder picker.');
-        }
-        return;
-      }
-
-      setIsUploadingToDrive(true);
-      const BATCH_SIZE = 4;
-      const t = topic.trim();
-      const st = serviceType;
-
-      const date = new Date().toISOString().split('T')[0];
-      const topicSlug = t.replace(/\\s+/g, '-');
-      const orgSlug = isCellChurch ? 'CellChurch' : 'Campus';
-      const rootFolderName = `CCI_${orgSlug}_${topicSlug}_Watermark_${date}`;
-
-      setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
-      const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
-
-      const totalFiles = activeOrganizations.length * (isCellChurch ? 2 : 4);
-      let uploaded = 0;
-
-      const { evt, bg } = await loadEventAssets();
-
-      for (let i = 0; i < activeOrganizations.length; i += BATCH_SIZE) {
-        const batch = activeOrganizations.slice(i, i + BATCH_SIZE);
-        setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
-
-        const results = await Promise.all(
-          batch.map(async (org) => {
-            let addr = org.address;
-            if (!isCellChurch) {
-              const campus = org as Campus;
-              if (st === 'midweek' && campus.midweekAddress) addr = campus.midweekAddress;
-              else if (st === 'sunday' && campus.sundayAddress) addr = campus.sundayAddress;
-            }
-
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
-            const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
-            let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
-            if (!isCellChurch) {
-              const [docPortrait, docLandscape] = await Promise.all([renderDocumentaryWatermark(payload, 'portrait', logoRef.current!), renderDocumentaryWatermark(payload, 'landscape', logoRef.current!)]);
-              const [dp, dl] = await Promise.all([toBlob(docPortrait.canvas), toBlob(docLandscape.canvas)]);
-              dpBlob = dp; dlBlob = dl;
-            }
-            return { org, pBlob, lBlob, dpBlob, dlBlob };
-          })
-        );
-
-        for (const { org, pBlob, lBlob, dpBlob, dlBlob } of results) {
-          setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
-          
-          const orgId = await createDriveFolder(accessToken, org.name, rootId);
-          const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
-
-          await Promise.all([uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId), uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId)]);
-          uploaded += 2;
-
-          if (dpBlob && dlBlob) {
-            const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
-            await Promise.all([uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId), uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId)]);
-            uploaded += 2;
-          }
-
-          setDriveProgress({ current: uploaded, total: totalFiles });
-          await delay(200);
-        }
-      }
-    } catch (err) {
-      let message = 'Google Drive export failed. Please try again.';
-      if (err instanceof Error) message = err.message;
-      setError(message);
-      console.error('Drive export error:', err);
-    } finally {
-      setIsGeneratingAll(false);
-      setIsUploadingToDrive(false);
-      setShowDownloadMenu(false);
-    }
-  };
-
   const handleEventBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -576,33 +347,71 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     }
   };
 
+  // Helper to key per-org overrides without colliding across campuses and cell churches.
+  const getOrgKey = (id: string, isCell: boolean) => `${isCell ? 'cell' : 'campus'}:${id}`;
+
   // The address an organisation will export with: the user's per-session manual
   // override if they edited it in the picker, otherwise the service-type default.
-  const resolveExportAddress = (org: Campus | CellChurch): string => {
-    const override = addressOverrides[org.id];
-    return override !== undefined ? override : resolveAddress(org, serviceType, organizationType);
+  const resolveExportAddress = (org: Campus | CellChurch, isCell: boolean): string => {
+    const key = getOrgKey(org.id, isCell);
+    const override = addressOverrides[key] ?? addressOverrides[org.id];
+    return override !== undefined ? override : resolveAddress(org, serviceType, isCell ? 'cellChurch' : 'campus');
   };
+
+  // The topic an organisation will export with: the user's per-session manual
+  // override if they edited it in the picker, otherwise the session global topic.
+  const resolveExportTopic = (org: Campus | CellChurch, isCell: boolean): string => {
+    const key = getOrgKey(org.id, isCell);
+    const override = topicOverrides[key] ?? topicOverrides[org.id];
+    return override !== undefined && override.trim() !== '' ? override.trim() : topic.trim();
+  };
+
+  // Eligible organisations by type
+  const eligibleCampuses = campuses.filter(
+    (c) => c.active && resolveAddress(c, serviceType, 'campus').trim() !== '',
+  );
+  const eligibleCellChurches = cellChurches.filter(
+    (c) => c.active && resolveAddress(c, serviceType, 'cellChurch').trim() !== '',
+  );
 
   // Active, picker-selected organisations whose final (possibly overridden)
   // address is non-empty — the exact set that will be exported.
-  const getSelectedOrganizations = (): (Campus | CellChurch)[] => {
-    const all: (Campus | CellChurch)[] = organizationType === 'cellChurch' ? cellChurches : campuses;
-    return all.filter((o) => o.active && selectedCampusIds.has(o.id) && resolveExportAddress(o).trim() !== '');
+  const getSelectedCampusesToExport = (): Campus[] => {
+    if (organizationType === 'cellChurch') return [];
+    return eligibleCampuses.filter(
+      (c) => selectedCampusIds.has(c.id) && resolveExportAddress(c, false).trim() !== '',
+    );
   };
 
-  // Open the multi-campus picker with every eligible org pre-selected and a
-  // fresh (empty) set of address overrides.
+  const getSelectedCellChurchesToExport = (): CellChurch[] => {
+    if (organizationType === 'cellChurch') {
+      return eligibleCellChurches.filter(
+        (c) => selectedCellChurchIds.has(c.id) && resolveExportAddress(c, true).trim() !== '',
+      );
+    }
+    if (!includeCellChurches) return [];
+    return eligibleCellChurches.filter(
+      (c) => selectedCellChurchIds.has(c.id) && resolveExportAddress(c, true).trim() !== '',
+    );
+  };
+
+  // Open the multi-org picker with every eligible org pre-selected and a fresh set of overrides.
   const openMultiSelect = (mode: 'zip' | 'drive') => {
-    const all: (Campus | CellChurch)[] = organizationType === 'cellChurch' ? cellChurches : campuses;
-    const eligible = all.filter((o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '');
-    // A midweek campus export defaults to the campuses that run midweek
-    // services; every other export defaults to all eligible organisations.
-    const preselect =
-      organizationType === 'campus' && serviceType === 'midweek'
-        ? eligible.filter((o) => (o as Campus).hasMidweek)
-        : eligible;
-    setSelectedCampusIds(new Set(preselect.map((o) => o.id)));
+    const isCell = organizationType === 'cellChurch';
+
+    // A midweek campus export defaults to the campuses that run midweek services;
+    // every other export defaults to all eligible organisations.
+    const preselectCampuses =
+      serviceType === 'midweek'
+        ? eligibleCampuses.filter((o) => o.hasMidweek)
+        : eligibleCampuses;
+    setSelectedCampusIds(new Set(preselectCampuses.map((o) => o.id)));
+    setSelectedCellChurchIds(new Set(eligibleCellChurches.map((o) => o.id)));
+
+    setIncludeCellChurches(false);
+    setMultiSelectTab(isCell ? 'cellChurches' : 'campuses');
     setAddressOverrides({});
+    setTopicOverrides({});
     setMultiSelectSearch('');
     setShowMultiSelectModal(mode);
   };
@@ -610,58 +419,93 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const closeMultiSelect = () => {
     setShowMultiSelectModal(null);
     setAddressOverrides({});
+    setTopicOverrides({});
     setMultiSelectSearch('');
   };
 
-  // Derived state for the multi-campus picker. Computed at component scope
-  // (rather than in a render-time IIFE) so the modal's event handlers aren't
-  // mistaken for render-time ref access by the react-hooks linter.
-  const isCellChurch = organizationType === 'cellChurch';
-  const multiSelectSource: (Campus | CellChurch)[] = isCellChurch ? cellChurches : campuses;
-  const allOrgs = multiSelectSource.filter(
-    (o) => o.active && resolveAddress(o, serviceType, organizationType).trim() !== '',
-  );
-  // A midweek campus export lists only the curated midweek campuses (plus any
-  // already-selected campus) until the user searches — then the whole campus
-  // list is searchable so any campus can be found and added.
-  const midweekCampusMode = organizationType === 'campus' && serviceType === 'midweek';
+  // Derived state for the multi-org picker
+  const isCellChurchMode = organizationType === 'cellChurch';
+  const activeTab: 'campuses' | 'cellChurches' = isCellChurchMode ? 'cellChurches' : multiSelectTab;
+
+  const selectedCampusesCount = eligibleCampuses.filter((c) => selectedCampusIds.has(c.id)).length;
+  const selectedCellChurchesCount = eligibleCellChurches.filter((c) => selectedCellChurchIds.has(c.id)).length;
+
+  const totalExportCount = isCellChurchMode
+    ? selectedCellChurchesCount
+    : selectedCampusesCount + (includeCellChurches ? selectedCellChurchesCount : 0);
+
   const multiSearchQuery = multiSelectSearch.trim().toLowerCase();
-  const filteredOrgs = multiSearchQuery
-    ? allOrgs.filter(
-        (o) =>
-          o.name.toLowerCase().includes(multiSearchQuery) ||
-          o.cityLabel.toLowerCase().includes(multiSearchQuery),
+  const midweekCampusMode = organizationType === 'campus' && serviceType === 'midweek';
+
+  const filteredCampuses = multiSearchQuery
+    ? eligibleCampuses.filter(
+        (c) =>
+          c.name.toLowerCase().includes(multiSearchQuery) ||
+          c.cityLabel.toLowerCase().includes(multiSearchQuery) ||
+          (topicOverrides[getOrgKey(c.id, false)] ?? '').toLowerCase().includes(multiSearchQuery),
       )
     : midweekCampusMode
-      ? allOrgs.filter((o) => (o as Campus).hasMidweek || selectedCampusIds.has(o.id))
-      : allOrgs;
-  const allSelected = allOrgs.length > 0 && allOrgs.every((o) => selectedCampusIds.has(o.id));
-  const selectedCount = allOrgs.filter((o) => selectedCampusIds.has(o.id)).length;
-  const orgLabel = isCellChurch ? 'cell churches' : 'campuses';
+      ? eligibleCampuses.filter((c) => c.hasMidweek || selectedCampusIds.has(c.id))
+      : eligibleCampuses;
 
-  const toggleOne = (id: string) => {
-    setSelectedCampusIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const filteredCellChurches = multiSearchQuery
+    ? eligibleCellChurches.filter(
+        (c) =>
+          c.name.toLowerCase().includes(multiSearchQuery) ||
+          c.cityLabel.toLowerCase().includes(multiSearchQuery) ||
+          (topicOverrides[getOrgKey(c.id, true)] ?? '').toLowerCase().includes(multiSearchQuery),
+      )
+    : eligibleCellChurches;
+
+  const activeTabOrgs: (Campus | CellChurch)[] = activeTab === 'cellChurches' ? filteredCellChurches : filteredCampuses;
+  const activeTabEligible: (Campus | CellChurch)[] = activeTab === 'cellChurches' ? eligibleCellChurches : eligibleCampuses;
+  const isTabAllSelected =
+    activeTab === 'cellChurches'
+      ? eligibleCellChurches.length > 0 && eligibleCellChurches.every((c) => selectedCellChurchIds.has(c.id))
+      : eligibleCampuses.length > 0 && eligibleCampuses.every((c) => selectedCampusIds.has(c.id));
+
+  const toggleOne = (id: string, isCell: boolean) => {
+    if (isCell) {
+      setSelectedCellChurchIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    } else {
+      setSelectedCampusIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    }
   };
+
   const toggleAll = () => {
-    setSelectedCampusIds(allSelected ? new Set() : new Set(allOrgs.map((o) => o.id)));
+    if (activeTab === 'cellChurches') {
+      setSelectedCellChurchIds(isTabAllSelected ? new Set() : new Set(eligibleCellChurches.map((c) => c.id)));
+    } else {
+      setSelectedCampusIds(isTabAllSelected ? new Set() : new Set(eligibleCampuses.map((c) => c.id)));
+    }
   };
 
   const handleDownloadSelectedCampuses = async () => {
     if (!topic.trim()) { setError('Please enter a topic before exporting'); return; }
-    const isCellChurch = organizationType === 'cellChurch';
-    const orgs = getSelectedOrganizations();
-    if (orgs.length === 0) { setError('No campuses selected'); return; }
+    const campusesToExport = getSelectedCampusesToExport();
+    const cellChurchesToExport = getSelectedCellChurchesToExport();
+    const totalToExport = campusesToExport.length + cellChurchesToExport.length;
+
+    if (totalToExport === 0) {
+      setError(`No ${organizationType === 'cellChurch' ? 'cell churches' : 'campuses'} selected`);
+      return;
+    }
 
     setShowMultiSelectModal(null);
     setShowDownloadMenu(false);
     setError(null);
     setIsGeneratingAll(true);
-    setProgress({ current: 0, total: orgs.length, campusName: '' });
+    setProgress({ current: 0, total: totalToExport, campusName: '' });
 
     try {
       if (!logoRef.current) throw new Error('Logo not loaded');
@@ -671,45 +515,140 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const BATCH_SIZE = 4;
 
       const { evt, bg } = await loadEventAssets();
+      let completedCount = 0;
 
-      for (let i = 0; i < orgs.length; i += BATCH_SIZE) {
-        const batch = orgs.slice(i, Math.min(i + BATCH_SIZE, orgs.length));
-        setProgress({ current: i + 1, total: orgs.length, campusName: batch.map((c) => c.name).join(', ') });
+      // 1. Process Campuses
+      for (let i = 0; i < campusesToExport.length; i += BATCH_SIZE) {
+        const batch = campusesToExport.slice(i, Math.min(i + BATCH_SIZE, campusesToExport.length));
+        setProgress({ current: completedCount + 1, total: totalToExport, campusName: batch.map((c) => c.name).join(', ') });
 
         const batchResults = await Promise.all(
-          batch.map(async (org) => {
-            const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType, topic: topic.trim(), campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
-            const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
-            let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
-            if (!isCellChurch) {
-              const [dp, dl] = await Promise.all([renderDocumentaryWatermark(payload, 'portrait', logoRef.current!), renderDocumentaryWatermark(payload, 'landscape', logoRef.current!)]);
-              [dpBlob, dlBlob] = await Promise.all([toBlob(dp.canvas), toBlob(dl.canvas)]);
-            }
-            return { org, pBlob, lBlob, dpBlob, dlBlob };
-          })
+          batch.map(async (campus) => {
+            const addr = resolveExportAddress(campus, false);
+            const campusTopic = resolveExportTopic(campus, false);
+            const payload: WatermarkPayload = {
+              serviceType,
+              topic: campusTopic,
+              campusName: campus.name,
+              cityLabel: campus.cityLabel,
+              address: addr.trim(),
+              eventLogoUrl: eventLogo || undefined,
+              eventBgColor,
+              eventLogoScale,
+              isCellChurch: false,
+              eventAlign,
+              eventBoxColor,
+              eventUnclipTop,
+              eventLogoOffsetX,
+              eventLogoOffsetY,
+            };
+
+            const [portrait, landscape] = await Promise.all([
+              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+            ]);
+            const [pBlob, lBlob] = await Promise.all([
+              toBlob(portrait.canvas),
+              toBlob(landscape.canvas),
+            ]);
+
+            const [dp, dl] = await Promise.all([
+              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+            ]);
+            const [dpBlob, dlBlob] = await Promise.all([
+              toBlob(dp.canvas),
+              toBlob(dl.canvas),
+            ]);
+
+            return { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob };
+          }),
         );
 
-        batchResults.forEach(({ org, pBlob, lBlob, dpBlob, dlBlob }) => {
-          const orgFolder = zip.folder(org.name);
+        batchResults.forEach(({ campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob }) => {
+          const orgFolder = zip.folder(campus.name);
           const svcFolder = orgFolder?.folder('Service');
-          svcFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Portrait'), pBlob);
-          svcFolder?.file(generateFilename(org.name, serviceType, topic.trim(), 'Landscape'), lBlob);
-          if (dpBlob && dlBlob) {
-            const docFolder = orgFolder?.folder('Documentary');
-            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Portrait'), dpBlob);
-            docFolder?.file(generateDocumentaryFilename(org.name, serviceType, topic.trim(), 'Landscape'), dlBlob);
-          }
+          svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Portrait'), pBlob);
+          svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Landscape'), lBlob);
+
+          const docFolder = orgFolder?.folder('Documentary');
+          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Portrait'), dpBlob);
+          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Landscape'), dlBlob);
         });
-        setProgress({ current: i + batch.length, total: orgs.length, campusName: batch[batch.length - 1].name });
+
+        completedCount += batch.length;
+        setProgress({ current: completedCount, total: totalToExport, campusName: batch[batch.length - 1].name });
+      }
+
+      // 2. Process Cell Churches
+      if (cellChurchesToExport.length > 0) {
+        // If exported simultaneously with campuses, put them inside a 'Cell Church' subfolder.
+        // If solely exporting cell churches, put them directly in the zip root.
+        const isSimultaneous = campusesToExport.length > 0;
+        const targetZipRoot = isSimultaneous ? zip.folder('Cell Church') : zip;
+
+        for (let i = 0; i < cellChurchesToExport.length; i += BATCH_SIZE) {
+          const batch = cellChurchesToExport.slice(i, Math.min(i + BATCH_SIZE, cellChurchesToExport.length));
+          setProgress({ current: completedCount + 1, total: totalToExport, campusName: `Cell Church: ${batch.map((c) => c.name).join(', ')}` });
+
+          const batchResults = await Promise.all(
+            batch.map(async (cc) => {
+              const addr = resolveExportAddress(cc, true);
+              const ccTopic = resolveExportTopic(cc, true);
+              const payload: WatermarkPayload = {
+                serviceType,
+                topic: ccTopic,
+                campusName: cc.name,
+                cityLabel: cc.cityLabel,
+                address: addr.trim(),
+                eventLogoUrl: eventLogo || undefined,
+                eventBgColor,
+                eventLogoScale,
+                isCellChurch: true,
+                eventAlign,
+                eventBoxColor,
+                eventUnclipTop,
+                eventLogoOffsetX,
+                eventLogoOffsetY,
+              };
+
+              const [portrait, landscape] = await Promise.all([
+                renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+                renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+              ]);
+              const [pBlob, lBlob] = await Promise.all([
+                toBlob(portrait.canvas),
+                toBlob(landscape.canvas),
+              ]);
+
+              return { cc, ccTopic, pBlob, lBlob };
+            }),
+          );
+
+          batchResults.forEach(({ cc, ccTopic, pBlob, lBlob }) => {
+            const orgFolder = targetZipRoot?.folder(cc.name);
+            const svcFolder = orgFolder?.folder('Service');
+            svcFolder?.file(generateFilename(cc.name, serviceType, ccTopic, 'Portrait'), pBlob);
+            svcFolder?.file(generateFilename(cc.name, serviceType, ccTopic, 'Landscape'), lBlob);
+          });
+
+          completedCount += batch.length;
+          setProgress({ current: completedCount, total: totalToExport, campusName: batch[batch.length - 1].name });
+        }
       }
 
       const content = await zip.generateAsync({ type: 'blob' });
       const date = new Date().toISOString().split('T')[0];
-      saveAs(content, `CCI_Selected_${topic.trim().replace(/\s+/g, '-')}_Watermark_${date}.zip`);
+      const topicSlug = topic.trim().replace(/\s+/g, '-');
+      let zipName = `CCI_Campuses_${topicSlug}_Watermark_${date}.zip`;
+      if (organizationType === 'cellChurch') {
+        zipName = `CCI_CellChurches_${topicSlug}_Watermark_${date}.zip`;
+      } else if (includeCellChurches && cellChurchesToExport.length > 0) {
+        zipName = `CCI_Campuses_and_CellChurches_${topicSlug}_Watermark_${date}.zip`;
+      }
+      saveAs(content, zipName);
     } catch (err) {
-      setError('Failed to generate selected campuses. Please try again.');
+      setError('Failed to generate selected watermarks. Please try again.');
       console.error(err);
     } finally {
       setIsGeneratingAll(false);
@@ -718,9 +657,14 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
   const handleDriveExportSelected = async () => {
     if (!topic.trim()) { setError('Please enter a topic before exporting'); return; }
-    const isCellChurch = organizationType === 'cellChurch';
-    const orgs = getSelectedOrganizations();
-    if (orgs.length === 0) { setError('No campuses selected'); return; }
+    const campusesToExport = getSelectedCampusesToExport();
+    const cellChurchesToExport = getSelectedCellChurchesToExport();
+    const totalOrgs = campusesToExport.length + cellChurchesToExport.length;
+
+    if (totalOrgs === 0) {
+      setError(`No ${organizationType === 'cellChurch' ? 'cell churches' : 'campuses'} selected`);
+      return;
+    }
 
     setShowMultiSelectModal(null);
     setShowDownloadMenu(false);
@@ -749,49 +693,155 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       const BATCH_SIZE = 4;
       const t = topic.trim();
       const st = serviceType;
-
       const date = new Date().toISOString().split('T')[0];
-      const rootFolderName = `CCI_Selected_${t.replace(/\\s+/g, '-')}_Watermark_${date}`;
+      const topicSlug = t.replace(/\s+/g, '-');
+
+      let rootFolderName = `CCI_Campuses_${topicSlug}_Watermark_${date}`;
+      if (organizationType === 'cellChurch') {
+        rootFolderName = `CCI_CellChurches_${topicSlug}_Watermark_${date}`;
+      } else if (includeCellChurches && cellChurchesToExport.length > 0) {
+        rootFolderName = `CCI_Campuses_and_CellChurches_${topicSlug}_Watermark_${date}`;
+      }
+
       setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
       const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
 
-      const totalFiles = orgs.length * (isCellChurch ? 2 : 4);
+      // Campuses: 4 files (2 service + 2 doc); Cell churches: 2 files (2 service)
+      const totalFiles = campusesToExport.length * 4 + cellChurchesToExport.length * 2;
       let uploaded = 0;
 
       const { evt, bg } = await loadEventAssets();
 
-      for (let i = 0; i < orgs.length; i += BATCH_SIZE) {
-        const batch = orgs.slice(i, i + BATCH_SIZE);
+      // 1. Upload Campuses
+      for (let i = 0; i < campusesToExport.length; i += BATCH_SIZE) {
+        const batch = campusesToExport.slice(i, i + BATCH_SIZE);
         setProgress({ current: uploaded, total: totalFiles, campusName: `Generating ${batch.map((c) => c.name).join(', ')}...` });
 
         const results = await Promise.all(
-          batch.map(async (org) => {
-            const addr = resolveExportAddress(org);
-            const payload: WatermarkPayload = { serviceType: st, topic: t, campusName: org.name, cityLabel: org.cityLabel, address: addr.trim(), eventLogoUrl: eventLogo || undefined, eventBgColor, eventLogoScale, isCellChurch, eventAlign, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY };
-            const [portrait, landscape] = await Promise.all([renderWatermark(payload, 'portrait', logoRef.current!, evt, bg), renderWatermark(payload, 'landscape', logoRef.current!, evt, bg)]);
-            const [pBlob, lBlob] = await Promise.all([toBlob(portrait.canvas), toBlob(landscape.canvas)]);
-            let dpBlob: Blob | null = null; let dlBlob: Blob | null = null;
-            if (!isCellChurch) {
-              const [dp, dl] = await Promise.all([renderDocumentaryWatermark(payload, 'portrait', logoRef.current!), renderDocumentaryWatermark(payload, 'landscape', logoRef.current!)]);
-              [dpBlob, dlBlob] = await Promise.all([toBlob(dp.canvas), toBlob(dl.canvas)]);
-            }
-            return { org, pBlob, lBlob, dpBlob, dlBlob };
-          })
+          batch.map(async (campus) => {
+            const addr = resolveExportAddress(campus, false);
+            const campusTopic = resolveExportTopic(campus, false);
+            const payload: WatermarkPayload = {
+              serviceType: st,
+              topic: campusTopic,
+              campusName: campus.name,
+              cityLabel: campus.cityLabel,
+              address: addr.trim(),
+              eventLogoUrl: eventLogo || undefined,
+              eventBgColor,
+              eventLogoScale,
+              isCellChurch: false,
+              eventAlign,
+              eventBoxColor,
+              eventUnclipTop,
+              eventLogoOffsetX,
+              eventLogoOffsetY,
+            };
+
+            const [portrait, landscape] = await Promise.all([
+              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+            ]);
+            const [pBlob, lBlob] = await Promise.all([
+              toBlob(portrait.canvas),
+              toBlob(landscape.canvas),
+            ]);
+
+            const [dp, dl] = await Promise.all([
+              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+            ]);
+            const [dpBlob, dlBlob] = await Promise.all([
+              toBlob(dp.canvas),
+              toBlob(dl.canvas),
+            ]);
+
+            return { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob };
+          }),
         );
 
-        for (const { org, pBlob, lBlob, dpBlob, dlBlob } of results) {
-          setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${org.name}...` });
-          const orgId = await createDriveFolder(accessToken, org.name, rootId);
+        for (const { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob } of results) {
+          setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
+          const orgId = await createDriveFolder(accessToken, campus.name, rootId);
           const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
-          await Promise.all([uploadDriveFile(accessToken, pBlob, generateFilename(org.name, st, t, 'Portrait'), serviceId), uploadDriveFile(accessToken, lBlob, generateFilename(org.name, st, t, 'Landscape'), serviceId)]);
+
+          await Promise.all([
+            uploadDriveFile(accessToken, pBlob, generateFilename(campus.name, st, campusTopic, 'Portrait'), serviceId),
+            uploadDriveFile(accessToken, lBlob, generateFilename(campus.name, st, campusTopic, 'Landscape'), serviceId),
+          ]);
           uploaded += 2;
-          if (dpBlob && dlBlob) {
-            const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
-            await Promise.all([uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(org.name, st, t, 'Portrait'), docId), uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(org.name, st, t, 'Landscape'), docId)]);
-            uploaded += 2;
-          }
+
+          const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
+          await Promise.all([
+            uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Portrait'), docId),
+            uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Landscape'), docId),
+          ]);
+          uploaded += 2;
+
           setDriveProgress({ current: uploaded, total: totalFiles });
           await delay(200);
+        }
+      }
+
+      // 2. Upload Cell Churches
+      if (cellChurchesToExport.length > 0) {
+        const isSimultaneous = campusesToExport.length > 0;
+        const cellChurchParentId = isSimultaneous
+          ? await createDriveFolder(accessToken, 'Cell Church', rootId)
+          : rootId;
+
+        for (let i = 0; i < cellChurchesToExport.length; i += BATCH_SIZE) {
+          const batch = cellChurchesToExport.slice(i, i + BATCH_SIZE);
+          setProgress({ current: uploaded, total: totalFiles, campusName: `Generating Cell Church: ${batch.map((c) => c.name).join(', ')}...` });
+
+          const results = await Promise.all(
+            batch.map(async (cc) => {
+              const addr = resolveExportAddress(cc, true);
+              const ccTopic = resolveExportTopic(cc, true);
+              const payload: WatermarkPayload = {
+                serviceType: st,
+                topic: ccTopic,
+                campusName: cc.name,
+                cityLabel: cc.cityLabel,
+                address: addr.trim(),
+                eventLogoUrl: eventLogo || undefined,
+                eventBgColor,
+                eventLogoScale,
+                isCellChurch: true,
+                eventAlign,
+                eventBoxColor,
+                eventUnclipTop,
+                eventLogoOffsetX,
+                eventLogoOffsetY,
+              };
+
+              const [portrait, landscape] = await Promise.all([
+                renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+                renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+              ]);
+              const [pBlob, lBlob] = await Promise.all([
+                toBlob(portrait.canvas),
+                toBlob(landscape.canvas),
+              ]);
+
+              return { cc, ccTopic, pBlob, lBlob };
+            }),
+          );
+
+          for (const { cc, ccTopic, pBlob, lBlob } of results) {
+            setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading Cell Church: ${cc.name}...` });
+            const orgId = await createDriveFolder(accessToken, cc.name, cellChurchParentId);
+            const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
+
+            await Promise.all([
+              uploadDriveFile(accessToken, pBlob, generateFilename(cc.name, st, ccTopic, 'Portrait'), serviceId),
+              uploadDriveFile(accessToken, lBlob, generateFilename(cc.name, st, ccTopic, 'Landscape'), serviceId),
+            ]);
+            uploaded += 2;
+
+            setDriveProgress({ current: uploaded, total: totalFiles });
+            await delay(200);
+          }
         }
       }
     } catch (err) {
@@ -1550,8 +1600,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">Campuses (ZIP)</div>
-                          <div className="text-[12px] text-[var(--text-muted)]">Export all or select specific {organizationType === 'cellChurch' ? 'cell churches' : 'campuses'}</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">{organizationType === 'cellChurch' ? 'Cell Churches (ZIP)' : 'Campuses / Bulk Export (ZIP)'}</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">{organizationType === 'cellChurch' ? 'Export all or select specific cell churches' : 'Export campuses and include cell churches'}</div>
                         </div>
                       </button>
 
@@ -1566,8 +1616,8 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           <img src="/google-drive-logo.svg" alt="Google Drive" className="w-full h-full" />
                         </div>
                         <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">Campuses (Google Drive)</div>
-                          <div className="text-[12px] text-[var(--text-muted)]">Export all or select specific {organizationType === 'cellChurch' ? 'cell churches' : 'campuses'}</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">{organizationType === 'cellChurch' ? 'Cell Churches (Drive)' : 'Campuses / Bulk Export (Drive)'}</div>
+                          <div className="text-[12px] text-[var(--text-muted)]">{organizationType === 'cellChurch' ? 'Export all or select specific cell churches' : 'Export campuses and include cell churches'}</div>
                         </div>
                       </button>
                     </div>
@@ -1578,121 +1628,285 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
 
             {/* Multi-Campus Selection Modal */}
             {showMultiSelectModal && (
-                <>
+              <>
+                <div
+                  className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50"
+                  onClick={closeMultiSelect}
+                >
                   <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50"
-                    onClick={closeMultiSelect}
+                    className="relative w-full max-w-[500px] bg-[var(--surface)] rounded-[16px] shadow-[0_20px_60px_rgba(0,0,0,0.22)] overflow-hidden border border-[var(--border-strong)] animate-modal flex flex-col max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <div
-                      className="relative w-full max-w-[400px] bg-[var(--surface)] rounded-[14px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden border border-[var(--border-strong)] animate-modal"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* Header */}
-                      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[var(--border)]">
-                        <div>
-                          <h3 className="text-[14px] font-semibold tracking-tight text-[var(--text)]">Select {isCellChurch ? 'Cell Churches' : 'Campuses'}</h3>
-                          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{selectedCount} of {allOrgs.length} selected</p>
-                        </div>
-                        <button
-                          onClick={closeMultiSelect}
-                          className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95"
-                          aria-label="Close"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
+                    {/* Header */}
+                    <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[var(--border)] shrink-0">
+                      <div>
+                        <h3 className="text-[14px] font-semibold tracking-tight text-[var(--text)]">
+                          {isCellChurchMode ? 'Select Cell Churches to Export' : 'Select Campuses to Export'}
+                        </h3>
+                        <p className="text-[12px] text-[var(--text-muted)] mt-0.5">
+                          {!isCellChurchMode && includeCellChurches
+                            ? `${selectedCampusesCount} campuses, ${selectedCellChurchesCount} cell churches selected`
+                            : `${isCellChurchMode ? selectedCellChurchesCount : selectedCampusesCount} of ${activeTabEligible.length} selected`}
+                        </p>
                       </div>
+                      <button
+                        onClick={closeMultiSelect}
+                        className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95 p-1 -mr-1"
+                        aria-label="Close"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
 
-                      {/* Search + Select All */}
-                      <div className="px-3 pt-3 pb-2 flex items-center gap-2 border-b border-[var(--border)]">
-                        <div className="relative flex-1">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                          </svg>
+                    {/* Include Cell Churches Toggle (shown in campus mode) */}
+                    {!isCellChurchMode && (
+                      <div className="px-4 py-2.5 bg-[var(--surface-subtle)] border-b border-[var(--border)] flex items-center justify-between gap-3 shrink-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-6 h-6 rounded-[6px] bg-[var(--brand-red-soft)] text-[var(--brand-red)] font-semibold text-[11px] flex items-center justify-center shrink-0">
+                            CC
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-semibold text-[var(--text)] leading-tight">
+                              Include Cell Churches
+                            </div>
+                            <div className="text-[11px] text-[var(--text-muted)] truncate">
+                              Export simultaneously into a nested &quot;Cell Church&quot; folder
+                            </div>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
                           <input
-                            type="text"
-                            placeholder={`Search ${orgLabel}...`}
-                            value={multiSelectSearch}
-                            onChange={(e) => setMultiSelectSearch(e.target.value)}
-                            className="w-full h-9 pl-8 pr-3 bg-[var(--surface-subtle)] border border-transparent rounded-[8px] text-[13px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--brand-red)] focus:ring-[2px] focus:ring-[var(--brand-red)]/20 transition-all"
+                            type="checkbox"
+                            checked={includeCellChurches}
+                            onChange={(e) => setIncludeCellChurches(e.target.checked)}
+                            className="sr-only peer"
                           />
-                        </div>
+                          <div className="w-9 h-5 bg-[var(--border-strong)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--brand-red)]"></div>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Tabs when Cell Churches are included */}
+                    {!isCellChurchMode && includeCellChurches && (
+                      <div className="flex items-center border-b border-[var(--border)] px-4 bg-[var(--surface)] shrink-0 gap-2">
                         <button
-                          onClick={toggleAll}
-                          className="shrink-0 h-9 px-3 text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-all active:scale-95"
+                          type="button"
+                          onClick={() => setMultiSelectTab('campuses')}
+                          className={`py-2.5 px-3 text-[12px] font-semibold transition-colors relative flex items-center gap-1.5 ${
+                            activeTab === 'campuses'
+                              ? 'text-[var(--brand-red)]'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                          }`}
                         >
-                          {allSelected ? 'None' : 'All'}
+                          <span>Campuses ({selectedCampusesCount})</span>
+                          {multiSearchQuery && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full">
+                              {filteredCampuses.length}
+                            </span>
+                          )}
+                          {activeTab === 'campuses' && (
+                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--brand-red)] rounded-full" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMultiSelectTab('cellChurches')}
+                          className={`py-2.5 px-3 text-[12px] font-semibold transition-colors relative flex items-center gap-1.5 ${
+                            activeTab === 'cellChurches'
+                              ? 'text-[var(--brand-red)]'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                          }`}
+                        >
+                          <span>Cell Churches ({selectedCellChurchesCount})</span>
+                          {multiSearchQuery && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-[var(--surface-subtle)] text-[var(--text-muted)] rounded-full">
+                              {filteredCellChurches.length}
+                            </span>
+                          )}
+                          {activeTab === 'cellChurches' && (
+                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--brand-red)] rounded-full" />
+                          )}
                         </button>
                       </div>
+                    )}
 
-                      {/* Midweek default hint */}
-                      {midweekCampusMode && !multiSearchQuery && (
-                        <div className="px-4 py-2 text-[11px] leading-relaxed text-[var(--text-muted)] bg-[var(--surface-subtle)] border-b border-[var(--border)]">
-                          Showing the campuses that run midweek services — search to add any other campus.
+                    {/* Search + Select All */}
+                    <div className="px-3 pt-3 pb-2 flex items-center gap-2 border-b border-[var(--border)] shrink-0">
+                      <div className="relative flex-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input
+                          type="text"
+                          placeholder={`Search ${activeTab === 'cellChurches' ? 'cell churches' : 'campuses'} by name, city, topic...`}
+                          value={multiSelectSearch}
+                          onChange={(e) => setMultiSelectSearch(e.target.value)}
+                          className="w-full h-9 pl-8 pr-3 bg-[var(--surface-subtle)] border border-transparent rounded-[8px] text-[13px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--brand-red)] focus:ring-[2px] focus:ring-[var(--brand-red)]/20 transition-all"
+                        />
+                      </div>
+                      <button
+                        onClick={toggleAll}
+                        className="shrink-0 h-9 px-3 text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] bg-[var(--surface-subtle)] border border-[var(--border)] rounded-[8px] hover:border-[var(--brand-red)] transition-all active:scale-95"
+                      >
+                        {isTabAllSelected ? 'None' : 'All'}
+                      </button>
+                    </div>
+
+                    {/* Midweek default hint */}
+                    {activeTab === 'campuses' && midweekCampusMode && !multiSearchQuery && (
+                      <div className="px-4 py-2 text-[11px] leading-relaxed text-[var(--text-muted)] bg-[var(--surface-subtle)] border-b border-[var(--border)] shrink-0">
+                        Showing campuses that run midweek services — search to add any other campus.
+                      </div>
+                    )}
+
+                    {/* Search switcher hint */}
+                    {!isCellChurchMode && includeCellChurches && multiSearchQuery && activeTabOrgs.length === 0 && (
+                      activeTab === 'campuses' && filteredCellChurches.length > 0 ? (
+                        <div className="px-4 py-2 text-[11px] bg-[var(--brand-red-soft)] text-[var(--brand-red)] flex items-center justify-between border-b border-[var(--border)] shrink-0">
+                          <span>No campuses match &quot;{multiSelectSearch}&quot;, but found {filteredCellChurches.length} in Cell Churches.</span>
+                          <button
+                            type="button"
+                            onClick={() => setMultiSelectTab('cellChurches')}
+                            className="font-semibold underline ml-2 shrink-0 hover:text-[var(--brand-red-dark)]"
+                          >
+                            View Cell Churches
+                          </button>
                         </div>
-                      )}
+                      ) : activeTab === 'cellChurches' && filteredCampuses.length > 0 ? (
+                        <div className="px-4 py-2 text-[11px] bg-[var(--brand-red-soft)] text-[var(--brand-red)] flex items-center justify-between border-b border-[var(--border)] shrink-0">
+                          <span>No cell churches match &quot;{multiSelectSearch}&quot;, but found {filteredCampuses.length} in Campuses.</span>
+                          <button
+                            type="button"
+                            onClick={() => setMultiSelectTab('campuses')}
+                            className="font-semibold underline ml-2 shrink-0 hover:text-[var(--brand-red-dark)]"
+                          >
+                            View Campuses
+                          </button>
+                        </div>
+                      ) : null
+                    )}
 
-                      {/* Campus list */}
-                      <div className="max-h-[280px] overflow-y-auto py-1">
-                        {filteredOrgs.length > 0 ? filteredOrgs.map((org) => {
-                          const checked = selectedCampusIds.has(org.id);
-                          const defaultAddr = resolveAddress(org, serviceType, organizationType);
-                          const currentAddr = addressOverrides[org.id] ?? defaultAddr;
-                          const addrEdited = addressOverrides[org.id] !== undefined && addressOverrides[org.id] !== defaultAddr;
-                          return (
+                    {/* Organisations List */}
+                    <div className="flex-1 max-h-[340px] overflow-y-auto py-1 divide-y divide-[var(--border)]/40">
+                      {activeTabOrgs.length > 0 ? activeTabOrgs.map((org) => {
+                        const isCell = activeTab === 'cellChurches';
+                        const orgKey = getOrgKey(org.id, isCell);
+                        const checked = isCell ? selectedCellChurchIds.has(org.id) : selectedCampusIds.has(org.id);
+                        const defaultAddr = resolveAddress(org, serviceType, isCell ? 'cellChurch' : 'campus');
+                        const currentAddr = addressOverrides[orgKey] ?? defaultAddr;
+                        const addrEdited = addressOverrides[orgKey] !== undefined && addressOverrides[orgKey] !== defaultAddr;
+                        const currentTopic = topicOverrides[orgKey] ?? '';
+                        const topicEdited = currentTopic.trim() !== '' && currentTopic.trim() !== topic.trim();
+
+                        return (
+                          <div
+                            key={orgKey}
+                            className="px-4 py-2.5 transition-colors hover:bg-[var(--surface-subtle)]"
+                          >
                             <div
-                              key={org.id}
-                              className="px-4 py-2 transition-colors hover:bg-[var(--surface-subtle)]"
+                              className="flex items-start gap-3 cursor-pointer py-0.5"
+                              onClick={() => toggleOne(org.id, isCell)}
                             >
-                              <div
-                                className="flex items-center gap-3 cursor-pointer py-0.5"
-                                onClick={() => toggleOne(org.id)}
+                              <span
+                                className={`w-4 h-4 mt-0.5 shrink-0 rounded-[4px] border flex items-center justify-center transition-colors ${
+                                  checked
+                                    ? 'bg-[var(--brand-red)] border-[var(--brand-red)]'
+                                    : 'border-[var(--border-strong)] bg-[var(--surface)]'
+                                }`}
                               >
-                                <span
-                                  className={`w-4 h-4 shrink-0 rounded-[4px] border flex items-center justify-center transition-colors ${
-                                    checked
-                                      ? 'bg-[var(--brand-red)] border-[var(--brand-red)]'
-                                      : 'border-[var(--border-strong)] bg-[var(--surface)]'
-                                  }`}
-                                >
-                                  {checked && (
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
+                                {checked && (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                )}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-medium text-[var(--text)] flex items-center gap-1.5 flex-wrap">
+                                  <span className="truncate">{org.name}</span>
+                                  {topicEdited && (
+                                    <span
+                                      className="px-1.5 py-0.5 bg-[var(--brand-red-soft)] text-[var(--brand-red)] text-[10px] font-semibold rounded shrink-0"
+                                      title={`Custom topic: "${currentTopic}"`}
+                                    >
+                                      Custom Topic
+                                    </span>
                                   )}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-[13px] font-medium text-[var(--text)] truncate flex items-center gap-1.5">
-                                    {org.name}
-                                    {addrEdited && (
-                                      <span
-                                        className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--brand-red)]"
-                                        title="Address edited for this export"
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-[var(--text-muted)] truncate">{org.cityLabel}</div>
+                                  {addrEdited && (
+                                    <span
+                                      className="px-1.5 py-0.5 bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--text-muted)] text-[10px] font-semibold rounded shrink-0"
+                                      title="Address edited for this export"
+                                    >
+                                      Custom Address
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
+                                  {org.cityLabel}
+                                  {topicEdited && (
+                                    <span className="text-[var(--brand-red)] font-medium"> • &ldquo;{currentTopic}&rdquo;</span>
+                                  )}
                                 </div>
                               </div>
-                              {checked && (
-                                <div
-                                  className="flex items-center gap-1 mt-1 pl-7"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-faint)]">
+                            </div>
+
+                            {/* Overrides block for selected items */}
+                            {checked && (
+                              <div
+                                className="mt-2 pl-7 space-y-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {/* Topic / Theme Override */}
+                                <div className="flex items-center gap-1.5 bg-[var(--surface-subtle)] px-2 py-1.5 rounded-[6px] border border-[var(--border)] focus-within:border-[var(--brand-red)] focus-within:bg-[var(--surface)] transition-all">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-faint)]">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                  </svg>
+                                  <input
+                                    type="text"
+                                    value={currentTopic}
+                                    onChange={(e) => setTopicOverrides((prev) => ({ ...prev, [orgKey]: e.target.value }))}
+                                    placeholder={`Topic: ${topic.trim() || 'Global topic'}`}
+                                    title="Edit theme/topic used for this organisation in this export"
+                                    className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none"
+                                  />
+                                  {topicEdited && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setTopicOverrides((prev) => {
+                                          const next = { ...prev };
+                                          delete next[orgKey];
+                                          return next;
+                                        })
+                                      }
+                                      title="Reset to global topic"
+                                      className="shrink-0 p-0.5 text-[var(--text-faint)] hover:text-[var(--brand-red)] transition-colors active:scale-90"
+                                    >
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Address Override */}
+                                <div className="flex items-center gap-1.5 bg-[var(--surface-subtle)] px-2 py-1.5 rounded-[6px] border border-[var(--border)] focus-within:border-[var(--brand-red)] focus-within:bg-[var(--surface)] transition-all">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-faint)]">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                     <circle cx="12" cy="10" r="3"></circle>
                                   </svg>
                                   <input
                                     type="text"
                                     value={currentAddr}
-                                    onChange={(e) => setAddressOverrides((prev) => ({ ...prev, [org.id]: e.target.value }))}
+                                    onChange={(e) => setAddressOverrides((prev) => ({ ...prev, [orgKey]: e.target.value }))}
                                     placeholder="Venue address..."
-                                    title="Edit the venue address used for this campus in this export"
-                                    className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text-muted)] px-1.5 py-1 rounded-[5px] border border-transparent hover:border-[var(--border)] focus:border-[var(--brand-red)] focus:bg-[var(--surface)] focus:text-[var(--text)] outline-none transition-colors"
+                                    title="Edit the venue address used for this organisation in this export"
+                                    className="flex-1 min-w-0 bg-transparent text-[11px] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none"
                                   />
                                   {addrEdited && (
                                     <button
@@ -1700,59 +1914,65 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                                       onClick={() =>
                                         setAddressOverrides((prev) => {
                                           const next = { ...prev };
-                                          delete next[org.id];
+                                          delete next[orgKey];
                                           return next;
                                         })
                                       }
                                       title="Reset to default address"
-                                      className="shrink-0 p-1 text-[var(--text-faint)] hover:text-[var(--brand-red)] transition-colors active:scale-90"
+                                      className="shrink-0 p-0.5 text-[var(--text-faint)] hover:text-[var(--brand-red)] transition-colors active:scale-90"
                                     >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="1 4 1 10 7 10"></polyline>
                                         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                                       </svg>
                                     </button>
                                   )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        }) : (
-                          <div className="py-6 text-center text-[13px] text-[var(--text-muted)]">No {orgLabel} found</div>
-                        )}
-                      </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }) : (
+                        <div className="py-8 text-center text-[13px] text-[var(--text-muted)]">
+                          No {activeTab === 'cellChurches' ? 'cell churches' : 'campuses'} found
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Footer CTA */}
-                      <div className="px-4 pb-4 pt-3 border-t border-[var(--border)]">
-                        <button
-                          onClick={() => {
-                            if (showMultiSelectModal === 'zip') handleDownloadSelectedCampuses();
-                            else handleDriveExportSelected();
-                          }}
-                          disabled={selectedCount === 0}
-                          className="w-full h-10 bg-[var(--brand-red)] text-white text-[13px] font-semibold rounded-[8px] hover:bg-[var(--brand-red-dark)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-                        >
-                          {showMultiSelectModal === 'drive' ? (
-                            <img src="/google-drive-logo.svg" alt="" className="w-4 h-4 brightness-0 invert" />
-                          ) : (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                              <polyline points="7 10 12 15 17 10"></polyline>
-                              <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                          )}
-                          {selectedCount === 0
-                            ? `Select ${orgLabel} to export`
-                            : `Export ${selectedCount} ${selectedCount === 1 ? orgLabel.slice(0, -1) : orgLabel} ${showMultiSelectModal === 'drive' ? 'to Drive' : '(ZIP)'}`
-                          }
-                        </button>
-                      </div>
+                    {/* Footer CTA */}
+                    <div className="px-4 pb-4 pt-3 border-t border-[var(--border)] shrink-0 bg-[var(--surface)]">
+                      <button
+                        onClick={() => {
+                          if (showMultiSelectModal === 'zip') handleDownloadSelectedCampuses();
+                          else handleDriveExportSelected();
+                        }}
+                        disabled={totalExportCount === 0}
+                        className="w-full h-10 bg-[var(--brand-red)] text-white text-[13px] font-semibold rounded-[8px] hover:bg-[var(--brand-red-dark)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                      >
+                        {showMultiSelectModal === 'drive' ? (
+                          <img src="/google-drive-logo.svg" alt="" className="w-4 h-4 brightness-0 invert" />
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                          </svg>
+                        )}
+                        {totalExportCount === 0
+                          ? 'Select organisations to export'
+                          : isCellChurchMode
+                            ? `Export ${selectedCellChurchesCount} ${selectedCellChurchesCount === 1 ? 'cell church' : 'cell churches'} ${showMultiSelectModal === 'drive' ? 'to Drive' : '(ZIP)'}`
+                            : includeCellChurches && selectedCellChurchesCount > 0
+                              ? `Export ${selectedCampusesCount} Campuses + ${selectedCellChurchesCount} Cell Churches ${showMultiSelectModal === 'drive' ? 'to Drive' : '(ZIP)'}`
+                              : `Export ${selectedCampusesCount} ${selectedCampusesCount === 1 ? 'campus' : 'campuses'} ${showMultiSelectModal === 'drive' ? 'to Drive' : '(ZIP)'}`}
+                      </button>
                     </div>
                   </div>
-                </>
+                </div>
+              </>
             )}
 
-            {/* Progress Modal */}
+                        {/* Progress Modal */}
             {isGeneratingAll && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
                 <div className="w-full max-w-[320px] bg-[var(--surface)] rounded-[12px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-6 border border-[var(--border-strong)]">
@@ -1770,7 +1990,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                       </>
                     ) : (
                       <>
-                        <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Generating All Campuses</h3>
+                        <h3 className="text-[14px] font-semibold text-[var(--text)] mb-2">Generating Watermarks</h3>
                         <p className="text-[13px] text-[var(--text-muted)] mb-3">
                           {progress.campusName} ({progress.current} of {progress.total})
                         </p>

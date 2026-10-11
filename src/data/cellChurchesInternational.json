@@ -28,6 +28,13 @@
     "active": true
   },
   {
+    "id": "finland",
+    "name": "Finland",
+    "cityLabel": "FINLAND",
+    "address": "Helsinki Central Library Oodi, Helsinki",
+    "active": true
+  },
+  {
     "id": "malaysia",
     "name": "Malaysia",
     "cityLabel": "MALAYSIA",

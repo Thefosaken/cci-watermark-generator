@@ -438,6 +438,17 @@
     "active": true
   },
   {
+    "id": "kent",
+    "name": "Kent",
+    "cityLabel": "KENT",
+    "address": "Hollingbourne Maidstone, ME17 1RE",
+    "sundayAddress": "Hollingbourne Maidstone, ME17 1RE",
+    "midweekAddress": "Hollingbourne Maidstone, ME17 1RE",
+    "country": "UK",
+    "region": "Kent",
+    "active": true
+  },
+  {
     "id": "kubwa",
     "name": "Kubwa",
     "cityLabel": "KUBWA",

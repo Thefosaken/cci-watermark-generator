@@ -76,6 +76,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   // orgKey ('campus:id' or 'cell:id'). Holds only edited values; reset on open.
   const [addressOverrides, setAddressOverrides] = useState<Record<string, string>>({});
   const [topicOverrides, setTopicOverrides] = useState<Record<string, string>>({});
+  const [selectedSundayService, setSelectedSundayService] = useState<string>('First Service');
 
   const logoRef = useRef<HTMLImageElement | null>(null);
   const eventLogoRef = useRef<HTMLImageElement | null>(null);
@@ -145,10 +146,24 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         } else if (serviceType === 'sunday' && campus.sundayAddress) {
           addr = campus.sundayAddress;
         }
+        if (serviceType === 'sunday' && campus.sundayServices && campus.sundayServices.length > 0) {
+          setSelectedSundayService(campus.sundayServices[0]);
+        }
       }
       setAddress(addr);
     }
   }
+
+  const activeSundayServices =
+    serviceType === 'sunday' &&
+    organizationType === 'campus' &&
+    selectedCampus &&
+    'sundayServices' in selectedCampus &&
+    selectedCampus.sundayServices &&
+    selectedCampus.sundayServices.length > 0
+      ? selectedCampus.sundayServices
+      : [];
+  const activeServiceName = activeSundayServices.length > 0 ? selectedSundayService : undefined;
 
   const handleOrganizationTypeChange = (newType: OrganizationType) => {
     setSelectedCampus(null);
@@ -179,6 +194,7 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
         campusName: selectedCampus.name,
         cityLabel: selectedCampus.cityLabel,
         address: address.trim(),
+        serviceName: activeServiceName,
         eventLogoUrl: eventLogo || undefined,
         eventBgColor,
         eventLogoScale,
@@ -268,6 +284,17 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventBgColor, eventLogoScale, eventBgImage, eventAlign, eventPreviewTick, eventBoxColor, eventUnclipTop, eventLogoOffsetX, eventLogoOffsetY]);
 
+  // Live preview when switching Sunday service (e.g. First Service <-> Second Service)
+  useEffect(() => {
+    if (serviceType === 'sunday' && activeSundayServices.length > 0 && portraitPreview && !isGenerating && canGenerate) {
+      const timer = setTimeout(() => {
+        handleGenerate();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSundayService]);
+
   // Helper — promisify canvas.toBlob
   const toBlob = (c: HTMLCanvasElement): Promise<Blob> =>
     new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'));
@@ -284,27 +311,27 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
   const handleDownloadPortrait = async () => {
     if (!portraitBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
+    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait', activeServiceName));
   };
 
   const handleDownloadLandscape = async () => {
     if (!landscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape', activeServiceName));
   };
 
   const handleDownloadBoth = async () => {
     if (!portraitBlobRef.current || !landscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
-    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(portraitBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Portrait', activeServiceName));
+    saveAs(landscapeBlobRef.current, generateFilename(selectedCampus.name, serviceType, topic, 'Landscape', activeServiceName));
   };
 
   const handleDownloadDocumentary = async () => {
     if (!docPortraitBlobRef.current || !docLandscapeBlobRef.current || !selectedCampus) return;
     const { saveAs } = await import('file-saver');
-    saveAs(docPortraitBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'));
-    saveAs(docLandscapeBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'));
+    saveAs(docPortraitBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait', activeServiceName));
+    saveAs(docLandscapeBlobRef.current, generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape', activeServiceName));
   };
 
   const handleAddToZip = async () => {
@@ -312,12 +339,68 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     const { saveAs } = await import('file-saver');
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
+
+    // If campus has multiple Sunday services, export all services in Option 1 layout
+    if (activeSundayServices.length > 1 && serviceType === 'sunday') {
+      const { evt, bg } = await loadEventAssets();
+      for (const svcName of activeSundayServices) {
+        const payload: WatermarkPayload = {
+          serviceType,
+          topic: topic.trim(),
+          campusName: selectedCampus.name,
+          cityLabel: selectedCampus.cityLabel,
+          address: address.trim(),
+          serviceName: svcName,
+          eventLogoUrl: eventLogo || undefined,
+          eventBgColor,
+          eventLogoScale,
+          isCellChurch: false,
+          eventAlign,
+          eventBoxColor,
+          eventUnclipTop,
+          eventLogoOffsetX,
+          eventLogoOffsetY,
+        };
+
+        const [portrait, landscape] = await Promise.all([
+          renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+          renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+        ]);
+        const [pBlob, lBlob] = await Promise.all([
+          toBlob(portrait.canvas),
+          toBlob(landscape.canvas),
+        ]);
+
+        const [dp, dl] = await Promise.all([
+          renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+          renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+        ]);
+        const [dpBlob, dlBlob] = await Promise.all([
+          toBlob(dp.canvas),
+          toBlob(dl.canvas),
+        ]);
+
+        const tierFolder = zip.folder(svcName);
+        const normalFolder = tierFolder?.folder('Service');
+        const docFolder = tierFolder?.folder('Documentary');
+
+        normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait', svcName), pBlob);
+        normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape', svcName), lBlob);
+        docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait', svcName), dpBlob);
+        docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape', svcName), dlBlob);
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `${selectedCampus.name.replace(/\s/g, '')}-${topic.replace(/\s/g, '')}.zip`);
+      return;
+    }
+
     const normalFolder = zip.folder('Service');
     const docFolder = zip.folder('Documentary');
-    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait'), portraitBlobRef.current);
-    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape'), landscapeBlobRef.current);
-    if (docPortraitBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait'), docPortraitBlobRef.current);
-    if (docLandscapeBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape'), docLandscapeBlobRef.current);
+    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Portrait', activeServiceName), portraitBlobRef.current);
+    normalFolder?.file(generateFilename(selectedCampus.name, serviceType, topic, 'Landscape', activeServiceName), landscapeBlobRef.current);
+    if (docPortraitBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Portrait', activeServiceName), docPortraitBlobRef.current);
+    if (docLandscapeBlobRef.current) docFolder?.file(generateDocumentaryFilename(selectedCampus.name, serviceType, topic, 'Landscape', activeServiceName), docLandscapeBlobRef.current);
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, `${selectedCampus.name.replace(/\s/g, '')}-${topic.replace(/\s/g, '')}.zip`);
   };
@@ -489,7 +572,11 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
     if (!topic.trim()) { setError('Please enter a topic before exporting'); return; }
     const campusesToExport = getSelectedCampusesToExport();
     const cellChurchesToExport = getSelectedCellChurchesToExport();
-    const totalToExport = campusesToExport.length + cellChurchesToExport.length;
+    const totalToExport =
+      campusesToExport.reduce((acc, c) => {
+        const count = serviceType === 'sunday' && c.sundayServices && c.sundayServices.length > 0 ? c.sundayServices.length : 1;
+        return acc + count;
+      }, 0) + cellChurchesToExport.length;
 
     if (totalToExport === 0) {
       setError(`No ${organizationType === 'cellChurch' ? 'cell churches' : 'campuses'} selected`);
@@ -521,57 +608,75 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
           batch.map(async (campus) => {
             const addr = resolveExportAddress(campus, false);
             const campusTopic = resolveExportTopic(campus, false);
-            const payload: WatermarkPayload = {
-              serviceType,
-              topic: campusTopic,
-              campusName: campus.name,
-              cityLabel: campus.cityLabel,
-              address: addr.trim(),
-              eventLogoUrl: eventLogo || undefined,
-              eventBgColor,
-              eventLogoScale,
-              isCellChurch: false,
-              eventAlign,
-              eventBoxColor,
-              eventUnclipTop,
-              eventLogoOffsetX,
-              eventLogoOffsetY,
-            };
+            const sundayServices =
+              serviceType === 'sunday' && campus.sundayServices && campus.sundayServices.length > 0
+                ? campus.sundayServices
+                : [undefined];
 
-            const [portrait, landscape] = await Promise.all([
-              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
-              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
-            ]);
-            const [pBlob, lBlob] = await Promise.all([
-              toBlob(portrait.canvas),
-              toBlob(landscape.canvas),
-            ]);
+            const serviceResults = await Promise.all(
+              sundayServices.map(async (svcName) => {
+                const payload: WatermarkPayload = {
+                  serviceType,
+                  topic: campusTopic,
+                  campusName: campus.name,
+                  cityLabel: campus.cityLabel,
+                  address: addr.trim(),
+                  serviceName: svcName,
+                  eventLogoUrl: eventLogo || undefined,
+                  eventBgColor,
+                  eventLogoScale,
+                  isCellChurch: false,
+                  eventAlign,
+                  eventBoxColor,
+                  eventUnclipTop,
+                  eventLogoOffsetX,
+                  eventLogoOffsetY,
+                };
 
-            const [dp, dl] = await Promise.all([
-              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
-            ]);
-            const [dpBlob, dlBlob] = await Promise.all([
-              toBlob(dp.canvas),
-              toBlob(dl.canvas),
-            ]);
+                const [portrait, landscape] = await Promise.all([
+                  renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+                  renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+                ]);
+                const [pBlob, lBlob] = await Promise.all([
+                  toBlob(portrait.canvas),
+                  toBlob(landscape.canvas),
+                ]);
 
-            return { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob };
+                const [dp, dl] = await Promise.all([
+                  renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+                  renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+                ]);
+                const [dpBlob, dlBlob] = await Promise.all([
+                  toBlob(dp.canvas),
+                  toBlob(dl.canvas),
+                ]);
+
+                return { svcName, pBlob, lBlob, dpBlob, dlBlob };
+              }),
+            );
+
+            return { campus, campusTopic, serviceResults };
           }),
         );
 
-        batchResults.forEach(({ campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob }) => {
+        batchResults.forEach(({ campus, campusTopic, serviceResults }) => {
           const orgFolder = zip.folder(campus.name);
-          const svcFolder = orgFolder?.folder('Service');
-          svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Portrait'), pBlob);
-          svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Landscape'), lBlob);
+          serviceResults.forEach(({ svcName, pBlob, lBlob, dpBlob, dlBlob }) => {
+            const baseFolder = svcName ? orgFolder?.folder(svcName) : orgFolder;
+            const svcFolder = baseFolder?.folder('Service');
+            svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Portrait', svcName), pBlob);
+            svcFolder?.file(generateFilename(campus.name, serviceType, campusTopic, 'Landscape', svcName), lBlob);
 
-          const docFolder = orgFolder?.folder('Documentary');
-          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Portrait'), dpBlob);
-          docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Landscape'), dlBlob);
+            const docFolder = baseFolder?.folder('Documentary');
+            docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Portrait', svcName), dpBlob);
+            docFolder?.file(generateDocumentaryFilename(campus.name, serviceType, campusTopic, 'Landscape', svcName), dlBlob);
+          });
         });
 
-        completedCount += batch.length;
+        completedCount += batch.reduce((sum, c) => {
+          const svcCount = serviceType === 'sunday' && c.sundayServices && c.sundayServices.length > 0 ? c.sundayServices.length : 1;
+          return sum + svcCount;
+        }, 0);
         setProgress({ current: completedCount, total: totalToExport, campusName: batch[batch.length - 1].name });
       }
 
@@ -701,8 +806,12 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
       setProgress({ current: 1, total: 1, campusName: 'Creating folder in Google Drive...' });
       const rootId = await createDriveFolder(accessToken, rootFolderName, folderId);
 
-      // Campuses: 4 files (2 service + 2 doc); Cell churches: 2 files (2 service)
-      const totalFiles = campusesToExport.length * 4 + cellChurchesToExport.length * 2;
+      // Campuses: 4 files (2 service + 2 doc) per service; Cell churches: 2 files (2 service)
+      const totalFiles =
+        campusesToExport.reduce((acc, c) => {
+          const count = st === 'sunday' && c.sundayServices && c.sundayServices.length > 0 ? c.sundayServices.length : 1;
+          return acc + count * 4;
+        }, 0) + cellChurchesToExport.length * 2;
       let uploaded = 0;
 
       const { evt, bg } = await loadEventAssets();
@@ -716,64 +825,82 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
           batch.map(async (campus) => {
             const addr = resolveExportAddress(campus, false);
             const campusTopic = resolveExportTopic(campus, false);
-            const payload: WatermarkPayload = {
-              serviceType: st,
-              topic: campusTopic,
-              campusName: campus.name,
-              cityLabel: campus.cityLabel,
-              address: addr.trim(),
-              eventLogoUrl: eventLogo || undefined,
-              eventBgColor,
-              eventLogoScale,
-              isCellChurch: false,
-              eventAlign,
-              eventBoxColor,
-              eventUnclipTop,
-              eventLogoOffsetX,
-              eventLogoOffsetY,
-            };
+            const sundayServices =
+              st === 'sunday' && campus.sundayServices && campus.sundayServices.length > 0
+                ? campus.sundayServices
+                : [undefined];
 
-            const [portrait, landscape] = await Promise.all([
-              renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
-              renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
-            ]);
-            const [pBlob, lBlob] = await Promise.all([
-              toBlob(portrait.canvas),
-              toBlob(landscape.canvas),
-            ]);
+            const serviceResults = await Promise.all(
+              sundayServices.map(async (svcName) => {
+                const payload: WatermarkPayload = {
+                  serviceType: st,
+                  topic: campusTopic,
+                  campusName: campus.name,
+                  cityLabel: campus.cityLabel,
+                  address: addr.trim(),
+                  serviceName: svcName,
+                  eventLogoUrl: eventLogo || undefined,
+                  eventBgColor,
+                  eventLogoScale,
+                  isCellChurch: false,
+                  eventAlign,
+                  eventBoxColor,
+                  eventUnclipTop,
+                  eventLogoOffsetX,
+                  eventLogoOffsetY,
+                };
 
-            const [dp, dl] = await Promise.all([
-              renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
-              renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
-            ]);
-            const [dpBlob, dlBlob] = await Promise.all([
-              toBlob(dp.canvas),
-              toBlob(dl.canvas),
-            ]);
+                const [portrait, landscape] = await Promise.all([
+                  renderWatermark(payload, 'portrait', logoRef.current!, evt, bg),
+                  renderWatermark(payload, 'landscape', logoRef.current!, evt, bg),
+                ]);
+                const [pBlob, lBlob] = await Promise.all([
+                  toBlob(portrait.canvas),
+                  toBlob(landscape.canvas),
+                ]);
 
-            return { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob };
+                const [dp, dl] = await Promise.all([
+                  renderDocumentaryWatermark(payload, 'portrait', logoRef.current!),
+                  renderDocumentaryWatermark(payload, 'landscape', logoRef.current!),
+                ]);
+                const [dpBlob, dlBlob] = await Promise.all([
+                  toBlob(dp.canvas),
+                  toBlob(dl.canvas),
+                ]);
+
+                return { svcName, pBlob, lBlob, dpBlob, dlBlob };
+              }),
+            );
+
+            return { campus, campusTopic, serviceResults };
           }),
         );
 
-        for (const { campus, campusTopic, pBlob, lBlob, dpBlob, dlBlob } of results) {
+        for (const { campus, campusTopic, serviceResults } of results) {
           setProgress({ current: uploaded, total: totalFiles, campusName: `Uploading ${campus.name}...` });
           const orgId = await createDriveFolder(accessToken, campus.name, rootId);
-          const serviceId = await createDriveFolder(accessToken, 'Service', orgId);
 
-          await Promise.all([
-            uploadDriveFile(accessToken, pBlob, generateFilename(campus.name, st, campusTopic, 'Portrait'), serviceId),
-            uploadDriveFile(accessToken, lBlob, generateFilename(campus.name, st, campusTopic, 'Landscape'), serviceId),
-          ]);
-          uploaded += 2;
+          for (const { svcName, pBlob, lBlob, dpBlob, dlBlob } of serviceResults) {
+            const targetParentId = svcName
+              ? await createDriveFolder(accessToken, svcName, orgId)
+              : orgId;
 
-          const docId = await createDriveFolder(accessToken, 'Documentary', orgId);
-          await Promise.all([
-            uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Portrait'), docId),
-            uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Landscape'), docId),
-          ]);
-          uploaded += 2;
+            const serviceId = await createDriveFolder(accessToken, 'Service', targetParentId);
+            await Promise.all([
+              uploadDriveFile(accessToken, pBlob, generateFilename(campus.name, st, campusTopic, 'Portrait', svcName), serviceId),
+              uploadDriveFile(accessToken, lBlob, generateFilename(campus.name, st, campusTopic, 'Landscape', svcName), serviceId),
+            ]);
+            uploaded += 2;
 
-          setDriveProgress({ current: uploaded, total: totalFiles });
+            const docId = await createDriveFolder(accessToken, 'Documentary', targetParentId);
+            await Promise.all([
+              uploadDriveFile(accessToken, dpBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Portrait', svcName), docId),
+              uploadDriveFile(accessToken, dlBlob, generateDocumentaryFilename(campus.name, st, campusTopic, 'Landscape', svcName), docId),
+            ]);
+            uploaded += 2;
+
+            setDriveProgress({ current: uploaded, total: totalFiles });
+          }
           await delay(200);
         }
       }
@@ -899,6 +1026,33 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
             organizationType={organizationType}
             onChange={setSelectedCampus}
           />
+
+          {activeSundayServices.length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                Sunday Service
+              </label>
+              <div className="flex bg-[var(--surface-subtle)] rounded-full p-1 border border-[var(--border)] gap-1">
+                {activeSundayServices.map((svc) => {
+                  const isSelected = selectedSundayService === svc;
+                  return (
+                    <button
+                      key={svc}
+                      type="button"
+                      onClick={() => setSelectedSundayService(svc)}
+                      className={`flex-1 py-2 px-3 text-[13px] font-medium rounded-full transition-all duration-200 outline-none active:scale-[0.98] select-none ${
+                        isSelected
+                          ? 'bg-[var(--surface-raised)] text-[var(--text)] shadow-sm border border-[var(--border)]'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      {svc}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="block text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Topic / Theme</label>
@@ -1555,8 +1709,12 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                           </svg>
                         </div>
                         <div>
-                          <div className="font-medium text-[13px] text-[var(--text)]">Archive to ZIP</div>
-                          <div className="text-[12px] text-[var(--text-muted)]">Compressed folder</div>
+                          <div className="font-medium text-[13px] text-[var(--text)]">
+                            {activeSundayServices.length > 1 ? 'Archive All Services to ZIP' : 'Archive to ZIP'}
+                          </div>
+                          <div className="text-[12px] text-[var(--text-muted)]">
+                            {activeSundayServices.length > 1 ? 'Includes First & Second Service' : 'Compressed folder'}
+                          </div>
                         </div>
                       </button>
 
@@ -1822,6 +1980,14 @@ export function WatermarkForm({ campuses, cellChurches, logoUrl }: WatermarkForm
                               <div className="flex-1 min-w-0">
                                 <div className="text-[13px] font-medium text-[var(--text)] flex items-center gap-1.5 flex-wrap">
                                   <span className="truncate">{org.name}</span>
+                                  {serviceType === 'sunday' && !isCell && 'sundayServices' in org && org.sundayServices && org.sundayServices.length > 0 && (
+                                    <span
+                                      className="px-1.5 py-0.5 bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--text-muted)] text-[10px] font-semibold rounded shrink-0"
+                                      title={`${org.sundayServices.length} Sunday services`}
+                                    >
+                                      {org.sundayServices.length} Services
+                                    </span>
+                                  )}
                                   {topicEdited && (
                                     <span
                                       className="px-1.5 py-0.5 bg-[var(--brand-red-soft)] text-[var(--brand-red)] text-[10px] font-semibold rounded shrink-0"

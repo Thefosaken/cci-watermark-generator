@@ -9,16 +9,22 @@ export function generateFilename(
   campusName: string,
   _serviceType: ServiceType,
   topic: string,
-  orientation: 'Portrait' | 'Landscape'
+  orientation: 'Portrait' | 'Landscape',
+  serviceName?: string
 ): string {
-  return `${slug(campusName)}-${slug(topic)}-${orientation}.png`;
+  const name = serviceName ? `${campusName} ${serviceName}` : campusName;
+  return `${slug(name)}-${slug(topic)}-${orientation}.png`;
 }
 
 export function generateDocumentaryFilename(
   campusName: string,
   _serviceType: ServiceType,
   topic: string,
-  orientation: 'Portrait' | 'Landscape'
+  orientation: 'Portrait' | 'Landscape',
+  serviceName?: string
 ): string {
-  return `${slug(campusName)}-Documentary-${slug(topic)}-${orientation}.png`;
+  const prefix = serviceName
+    ? `${slug(campusName)}-Documentary-${slug(serviceName)}`
+    : `${slug(campusName)}-Documentary`;
+  return `${prefix}-${slug(topic)}-${orientation}.png`;
 }

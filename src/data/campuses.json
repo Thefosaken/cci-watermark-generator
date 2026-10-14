@@ -378,6 +378,10 @@
     "sundayAddress": "Celebr8 Centre HQ, Vori Close, Acme Rd",
     "midweekAddress": "Celebr8 Centre HQ, Vori Close, Acme Rd",
     "hasMidweek": true,
+    "sundayServices": [
+      "First Service",
+      "Second Service"
+    ],
     "country": "Nigeria",
     "region": "Lagos",
     "active": true

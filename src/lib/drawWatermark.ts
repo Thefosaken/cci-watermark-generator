@@ -63,7 +63,7 @@ export async function renderWatermark(
 
   drawBottomBar(ctx, layout, tileColor);
   drawCentralTile(ctx, layout, payload.cityLabel, logoImage, payload.isCellChurch, tileColor);
-  drawServiceText(ctx, layout, payload.serviceType, payload.topic);
+  drawServiceText(ctx, layout, payload.serviceType, payload.topic, payload.serviceName);
   drawAddressText(ctx, layout, payload.address);
 
   if (isEvent) {
@@ -136,10 +136,18 @@ function drawServiceText(
   ctx: CanvasRenderingContext2D,
   layout: LayoutConfig,
   serviceType: WatermarkPayload['serviceType'],
-  topic: string
+  topic: string,
+  serviceName?: string
 ): void {
   const label = SERVICE_LABELS[serviceType];
-  const serviceText = serviceType === 'event' ? topic : `${label}/${topic}`;
+  let serviceText: string;
+  if (serviceType === 'event') {
+    serviceText = topic;
+  } else if (serviceName) {
+    serviceText = `${label}/${serviceName}/${topic}`;
+  } else {
+    serviceText = `${label}/${topic}`;
+  }
   
   ctx.fillStyle = DESIGN_TOKENS.colors.textWhite;
   fitTextToWidth(ctx, serviceText, 400, layout.topicFontSize, 8);
@@ -359,10 +367,13 @@ export async function renderDocumentaryWatermark(
   // Strip spaces from each segment so there is no whitespace in the badge text
   const topicNoSpaces = payload.topic.replace(/\s+/g, '');
   const campusNoSpaces = payload.campusName.replace(/\s+/g, '');
+  const serviceNameNoSpaces = payload.serviceName ? payload.serviceName.replace(/\s+/g, '') : '';
   const badgeText =
     payload.serviceType === 'event'
       ? `${topicNoSpaces}/${campusNoSpaces}`
-      : `${serviceLabel}/${topicNoSpaces}/${campusNoSpaces}`;
+      : serviceNameNoSpaces
+        ? `${serviceLabel}/${serviceNameNoSpaces}/${topicNoSpaces}/${campusNoSpaces}`
+        : `${serviceLabel}/${topicNoSpaces}/${campusNoSpaces}`;
 
   // Use the same font as topic/theme in the normal watermark ("Expose Bold")
   ctx.font = `700 ${layout.badgeFontSize}px "Expose Bold", sans-serif`;

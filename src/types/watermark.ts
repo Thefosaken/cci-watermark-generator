@@ -10,6 +10,7 @@ export interface Campus {
   sundayAddress?: string;
   midweekAddress?: string;
   hasMidweek?: boolean;
+  sundayServices?: string[];
   country?: string;
   region?: string;
   active: boolean;
@@ -36,6 +37,7 @@ export interface WatermarkPayload {
   campusName: string;
   cityLabel: string;
   address: string;
+  serviceName?: string;
   eventLogoUrl?: string;
   eventBgColor?: string;
   eventLogoScale?: number;

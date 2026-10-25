@@ -126,6 +126,13 @@
     "active": true
   },
   {
+    "id": "vancouver",
+    "name": "Vancouver",
+    "cityLabel": "VANCOUVER",
+    "address": "Vancouver Cell Church, Vancouver, Canada",
+    "active": true
+  },
+  {
     "id": "yenagoa",
     "name": "Yenagoa",
     "cityLabel": "YENAGOA",

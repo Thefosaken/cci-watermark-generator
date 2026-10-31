@@ -635,6 +635,17 @@
     "active": true
   },
   {
+    "id": "sheffield",
+    "name": "Sheffield",
+    "cityLabel": "SHEFFIELD",
+    "address": "Farm Road Sports and Social Club, S2 2TP",
+    "sundayAddress": "Farm Road Sports and Social Club, S2 2TP",
+    "midweekAddress": "Farm Road Sports and Social Club, S2 2TP",
+    "country": "UK",
+    "region": "South Yorkshire",
+    "active": true
+  },
+  {
     "id": "south-east-london",
     "name": "South East London",
     "cityLabel": "SOUTH EAST LONDON",

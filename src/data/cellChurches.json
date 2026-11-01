@@ -56,6 +56,13 @@
     "active": true
   },
   {
+    "id": "halifax",
+    "name": "Halifax",
+    "cityLabel": "HALIFAX",
+    "address": "Halifax Cell Church, Halifax, Canada",
+    "active": true
+  },
+  {
     "id": "ijebu-ode",
     "name": "Ijebu Ode",
     "cityLabel": "IJEBU ODE",
@@ -91,10 +98,24 @@
     "active": true
   },
   {
+    "id": "london-ontario",
+    "name": "London-Ontario",
+    "cityLabel": "LONDON-ONTARIO",
+    "address": "London-Ontario Cell Church, London-Ontario, Canada",
+    "active": true
+  },
+  {
     "id": "makurdi",
     "name": "Makurdi",
     "cityLabel": "MAKURDI",
     "address": "Makurdi Cell Church, Benue, Nigeria",
+    "active": true
+  },
+  {
+    "id": "montreal",
+    "name": "Montreal",
+    "cityLabel": "MONTREAL",
+    "address": "Montreal Cell Church, Montreal, Canada",
     "active": true
   },
   {

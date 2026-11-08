@@ -71,9 +71,9 @@
     "id": "amsterdam",
     "name": "Amsterdam",
     "cityLabel": "AMSTERDAM",
-    "address": "Magnolia Room Hotel Novotel, 1083 AD",
-    "sundayAddress": "Magnolia Room Hotel Novotel, 1083 AD",
-    "midweekAddress": "Magnolia Room Hotel Novotel, 1083 AD",
+    "address": "Dahlia Room, Hotel Novotel, 1083 AD",
+    "sundayAddress": "Dahlia Room, Hotel Novotel, 1083 AD",
+    "midweekAddress": "Dahlia Room, Hotel Novotel, 1083 AD",
     "country": "Netherlands",
     "region": "North Holland",
     "active": true

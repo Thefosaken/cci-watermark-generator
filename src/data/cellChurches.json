@@ -21,10 +21,24 @@
     "active": true
   },
   {
+    "id": "atlanta",
+    "name": "Atlanta",
+    "cityLabel": "ATLANTA",
+    "address": "Atlanta Cell Church, Atlanta, USA",
+    "active": true
+  },
+  {
     "id": "awka",
     "name": "Awka",
     "cityLabel": "AWKA",
     "address": "Awka Cell Church, Anambra, Nigeria",
+    "active": true
+  },
+  {
+    "id": "bay-area",
+    "name": "Bay Area",
+    "cityLabel": "BAY AREA",
+    "address": "Bay Area Cell Church, Bay Area, USA",
     "active": true
   },
   {
@@ -91,6 +105,13 @@
     "active": true
   },
   {
+    "id": "knoxville",
+    "name": "Knoxville",
+    "cityLabel": "KNOXVILLE",
+    "address": "Knoxville Cell Church, Knoxville, USA",
+    "active": true
+  },
+  {
     "id": "lokoja",
     "name": "Lokoja",
     "cityLabel": "LOKOJA",
@@ -116,6 +137,34 @@
     "name": "Montreal",
     "cityLabel": "MONTREAL",
     "address": "Montreal Cell Church, Montreal, Canada",
+    "active": true
+  },
+  {
+    "id": "nashville",
+    "name": "Nashville",
+    "cityLabel": "NASHVILLE",
+    "address": "Nashville Cell Church, Nashville, USA",
+    "active": true
+  },
+  {
+    "id": "new-york-jersey",
+    "name": "New York-Jersey",
+    "cityLabel": "NEW YORK-JERSEY",
+    "address": "New York/Jersey Cell Church, USA",
+    "active": true
+  },
+  {
+    "id": "north-carolina",
+    "name": "North Carolina",
+    "cityLabel": "NORTH CAROLINA",
+    "address": "North Carolina Cell Church, USA",
+    "active": true
+  },
+  {
+    "id": "oklahoma",
+    "name": "Oklahoma",
+    "cityLabel": "OKLAHOMA",
+    "address": "Oklahoma Cell Church, Oklahoma, USA",
     "active": true
   },
   {

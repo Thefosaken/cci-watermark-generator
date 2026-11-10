@@ -95,7 +95,7 @@
     "name": "Jos",
     "cityLabel": "JOS",
     "address": "Jos Cell Church, Plateau, Nigeria",
-    "active": true
+    "active": false
   },
   {
     "id": "kenya",
@@ -207,6 +207,6 @@
     "name": "Yenagoa",
     "cityLabel": "YENAGOA",
     "address": "Yenagoa Cell Church, Bayelsa, Nigeria",
-    "active": true
+    "active": false
   }
 ]

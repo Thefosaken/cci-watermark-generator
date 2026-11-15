@@ -581,9 +581,9 @@
     "id": "osogbo",
     "name": "Osogbo",
     "cityLabel": "OSOGBO",
-    "address": "April Royal Resort Ibikunle Estate",
-    "sundayAddress": "April Royal Resort Ibikunle Estate",
-    "midweekAddress": "April Royal Resort Ibikunle Estate",
+    "address": "April Royal Resort Ibikunle Estate, Osogbo",
+    "sundayAddress": "April Royal Resort Ibikunle Estate, Osogbo",
+    "midweekAddress": "April Royal Resort Ibikunle Estate, Osogbo",
     "country": "Nigeria",
     "region": "Osun",
     "active": true

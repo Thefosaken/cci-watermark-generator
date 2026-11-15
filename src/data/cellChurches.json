@@ -91,6 +91,13 @@
     "active": true
   },
   {
+    "id": "johannesburg",
+    "name": "Johannesburg",
+    "cityLabel": "JOHANNESBURG",
+    "address": "Johannesburg Cell Church, Johannesburg, South Africa",
+    "active": true
+  },
+  {
     "id": "jos",
     "name": "Jos",
     "cityLabel": "JOS",

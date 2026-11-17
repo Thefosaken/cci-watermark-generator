@@ -77,6 +77,13 @@
     "active": true
   },
   {
+    "id": "houston",
+    "name": "Houston",
+    "cityLabel": "HOUSTON",
+    "address": "Houston Cell Church, Houston, USA",
+    "active": true
+  },
+  {
     "id": "ijebu-ode",
     "name": "Ijebu Ode",
     "cityLabel": "IJEBU ODE",
